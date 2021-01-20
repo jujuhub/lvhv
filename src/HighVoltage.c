@@ -63,12 +63,14 @@ int main(void)
   /* check the high voltage status */
   checkHV();
 
+  float vprev = 0.;
+
   bool userDone = false;
   while (!userDone)
   {
     char user_input[NCHAR];
     char *tmp = NULL;
-    float vset = 0.;
+    float vset = 0., vdiff = 0., vtmp = 0., sign = -1.0;
     long long userOption, pwrEn;
 
     printf("\nWhat would you like to do?\n");
@@ -104,12 +106,41 @@ int main(void)
         break;
 
       case 2:
+        printf("PREVIOUS VOLTAGE = %f\n", vprev);
         printf("What is the max (PC) high voltage you want to set? > ");
         fgets(user_input, NCHAR, stdin);
-        // convert decimal/float, and then to HEX
         vset = (float)atof(user_input);
-//        printf("DEBUG: testing trigger board reading...\n");
-        setHV(vset);
+        if (vset > HV_MAX || vset < 0.)
+        {
+          printf("\n  !!! The voltage you input is out of bounds. Please try again.\n");
+          break;
+        }
+        printf("\nYou input >> %f V <<\n", vset);
+        if (vset > vprev)
+        {
+          sign = 1.0;
+        }
+        vtmp = vprev;
+        vdiff = fabs(vset - vtmp);
+        printf("DEBUG:  vtmp = %f,  vdiff = %f\n", vtmp, vdiff);
+        //nincrements = (int)vdiff/DV;
+        while (vtmp != vset)
+        {
+          if (vdiff < DV) // check if close to final voltage
+          {
+            vtmp += sign*vdiff;
+          }
+          else // increment by DV volts
+          {
+            vtmp += sign*DV;
+          }
+          printf("DEBUG:  vtmp = %f\n", vtmp);
+          vdiff = fabs(vset - vtmp);
+          printf("DEBUG:  vdiff = %f\n", vdiff);
+          setHV(vtmp);
+        }
+        //setHV(vset);
+        vprev = vset;
         break;
 
       case 3:
@@ -161,29 +192,42 @@ void enableHV(int pwrEn)
 
 void setHV(float vset)
 {
-  float vpct = vset / HV_MAX;
+  if (vset > HV_MAX)
+  {
+    vset = HV_MAX;
+  }
+
+  float vpct = vset / C40N_MAX;
   printf("  fraction of max HV output (4kV) = %f\n", vpct);
   float dac_vout = vpct * DAC_VMAX;
   printf("  DAC output voltage = %f\n", dac_vout);
+
+  // convert into DAC input code
   int k = 0;
   k = (int)(pow(2,12) * dac_vout / DAC_VREF);
   printf("  k = %X\n  k << 3 = %X\n", k, (k<<3));
 
-  char msg[] = "060#";
-//  sprintf(msg, "%X\n", k<<3);
-  char ch = '0';
-  printf("  msg = %s, len = %d\n", msg, strlen(msg));
+  // prepare CAN msg
+  char msg[] = "050#0000000000000000";
+  char tmp[17];
+  sprintf(tmp, "%X\n", (k<<3));
+//  printf("DEBUG:  msg = %s, len = %d\n", msg, strlen(msg));
+  printf("DEBUG:  tmp = %s, len = %d\n", tmp, strlen(tmp));
 
-  while (1)
+  int c = 0;
+  int delta = 5-strlen(tmp);
+  while (c < strlen(tmp)-1)
   {
-    if (strlen(msg) > 17) break;
-    strncat(msg, &ch, 1);
-//    printf("  msg = %s, len = %d\n", msg, strlen(msg));
+    msg[4+c+delta] = tmp[c];
+    printf("  msg = %s, len = %d\n", msg, strlen(msg));
+    c++;
   }
 
-  // convert decimal to binary
-  // convert binary to hexadecimal
   // create a can_msg and then send
+  char *can_msg[] = {"dummy", "can0", msg};
+  printf("DEBUG:  can_msg[2] = %s\n", can_msg[2]);
+//  cansend(can_msg);
+  delay(1000);
 }
 
 /* FOR TRIGGER BOARD

@@ -30,6 +30,13 @@ int main()
 //  can_msg[0][1] = 'i';
 //  printf("new can_msg[0] = %s\n", can_msg[0]);
 
+  char s[] = "123#0000000000000000";
+  printf("s[4] = %c\n", s[4]);
+
+  s[4] = '9';
+  printf("s[4] = %c\n", s[4]);
+  printf("s = %s, len = %d\n", s, strlen(s));
+
   return 0;
 }
 
