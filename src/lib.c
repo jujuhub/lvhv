@@ -6,10 +6,12 @@
  */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <wiringPi.h>
 
@@ -18,8 +20,6 @@
 
 bool isValidInput(char *usr_inp)
 {
-  // checks if user input is alpha valid
-
   bool valid = true;
   int i, slen;
   slen = strlen(usr_inp);
@@ -52,6 +52,67 @@ int checkYN(char *usr_inp)
   if (usr_inp[0] == 'Y' || usr_inp[0] == 'y') return 1;
   if (usr_inp[0] == 'N' || usr_inp[0] == 'n') return 0;
   else return 3;
+}
+
+float readPrevHV(char *fname)
+{
+  FILE *fp = fopen("/home/pi/lvhv/set_voltages.txt", "r");
+  char line[1024]= "";
+  char c;
+  int len = 0;
+
+  if (fp == NULL)
+  {
+    printf("  !!! Could not open file!\n");
+    return -999.;
+  }
+
+  fseek(fp, -1, SEEK_END);
+  c = fgetc(fp);
+
+  while (c == '\n')
+  {
+    fseek(fp, -2, SEEK_CUR);
+    c = fgetc(fp);
+//    printf("DEBUG:  while[1] c = %c (%d)\n", c, c);
+  }
+
+  while (c != '\n')
+  {
+    fseek(fp, -2, SEEK_CUR);
+    ++len;
+    c = fgetc(fp);
+//    printf("DEBUG:  while[2] c = %c (%d)\n", c, c);
+  }
+
+  fseek(fp, 0, SEEK_CUR);
+
+  if (fgets(line, len+1, fp) != NULL) puts(line);
+  else printf("  !!! Error!\n");
+  fclose(fp);
+
+  // extract previously set voltage
+  int i = 0;
+  char vstr[15] = "";
+  float vprev = 0.;
+
+  for (i = 0; i < strlen(line); i++)
+  {
+    if (line[i] == ' ' && i != 0)
+    {
+      vstr[i] = '\0';
+      break;
+    }
+    else
+    {
+      vstr[i] = line[i];
+    }
+  }
+
+  vprev = (float)atof(vstr);
+//  printf("DEBUG: readPrevHV returns %f, vstr = %s\n", vprev, vstr);
+
+  return vprev;
 }
 
 void fetchRHT(void)

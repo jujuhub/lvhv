@@ -10,7 +10,8 @@
 #define HV_MAX 3276.0
 #define DAC_VMAX 5.0
 #define DAC_VREF 2.048
-#define DV 20.0 // V
+#define DV 50.0 // V
+#define PREV_HV_FILE "set_voltages.txt"
 
 /*
  * function:    checkHV
@@ -19,7 +20,7 @@
  * parameters:  none
  * return:      none
  */
-void checkHV(void);
+bool checkHV(void);
 
 /*
  * function:    enableHV
@@ -35,6 +36,6 @@ void checkHV(void);
  * description: sets the maximum high voltage (photocathode)
  *
  * parameters:  hvSet = max high voltage to set
- * return:      none
+ * return:      0 (successful) or 1 (unsuccessful)
  */
-void setHV(float vset);
+int setHV(float vset);

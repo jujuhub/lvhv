@@ -28,7 +28,7 @@ int main(void)
 
   while (!canbusEnabled)
   {
-    printf("\nAre the CAN bus network and low voltage up? [Y/N] > ");
+    printf("\nAre the CAN bus network AND low voltage up? [Y/N] > ");
     fgets(user_input, NCHAR, stdin);
     if (!isValidInput(user_input))
     {

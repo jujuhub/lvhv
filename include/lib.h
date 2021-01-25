@@ -20,14 +20,13 @@ bool isValidInput(char *usr_inp);
 int checkYN(char *usr_inp);
 
 /*
- * function:    initSequence
- * description: initial routine sequence (power up LVHV board
- *              and low voltage lines)
+ * function:    fetchRHT
+ * description: makes measurement of relative humidity and temperature
  *
- * parameters:  none
- * return:      none
+ * parameters: none
+ * return: none
  */
-void initSequence(void);
+void fetchRHT(void);
 
 /*
  * function:    statCheck
@@ -37,6 +36,30 @@ void initSequence(void);
  * return:      none
  */
 void statCheck(void);
+
+/*
+ * function:    readPrevHV
+ * description: reads last line of set_voltages.txt and extracts
+ *              previously set high voltage value
+ *
+ * parameters:  file name
+ * return:      (float) previously set HV value
+ */
+float readPrevHV(char *fname);
+
+/**************************************************
+ *                NOT USED ANYMORE                *
+ **************************************************/
+
+/*
+ * function:    initSequence
+ * description: initial routine sequence (power up LVHV board
+ *              and low voltage lines)
+ *
+ * parameters:  none
+ * return:      none
+ */
+void initSequence(void);
 
 /*
  * function:    initRelayHAT
@@ -58,12 +81,3 @@ void initRelayHAT(void);
  * return:      none
  */
 void relayHAT(int rlyN, int rlyEN);
-
-/*
- * function:    fetchRHT
- * description: makes measurement of relative humidity and temperature
- *
- * parameters: none
- * return: none
- */
-void fetchRHT(void);

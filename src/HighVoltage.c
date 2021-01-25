@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <wiringPi.h>
 
 #include "HighVoltage.h"
@@ -30,7 +31,7 @@ int main(void)
 
   while (!canbusEnabled)
   {
-    printf("\nAre the CAN bus network and LV up? [Y/N] > ");
+    printf("\nAre the CAN bus network AND low voltage up? [Y/N] > ");
     fgets(user_input, NCHAR, stdin);
     if (!isValidInput(user_input))
     {
@@ -60,27 +61,39 @@ int main(void)
     }
   } // end while loop
 
-  /* check the high voltage status */
-  checkHV();
-
+  /* read previously set voltage from file if starting up */
   float vprev = 0.;
+  vprev = readPrevHV(PREV_HV_FILE);
+
+  /* check the high voltage status */
+  if (!checkHV())
+  {
+    printf(" test!\n");
+    vprev = 0.;
+  }
+
+  time_t tstamp;
+  tstamp = time(NULL);
 
   bool userDone = false;
   while (!userDone)
   {
+    FILE *fp = fopen(PREV_HV_FILE, "a+");
     char user_input[NCHAR];
     char *tmp = NULL;
-    float vset = 0., vdiff = 0., vtmp = 0., sign = -1.0;
+    float vset = 0., vdiff = 0., vtmp = 0., vread = 0.;
+    float sign = -1.0;
     long long userOption, pwrEn;
 
     printf("\nWhat would you like to do?\n");
     printf("  [1] Enable/Disable high voltage (on/off)\n");
     printf("  [2] Set high voltage\n");
     printf("  [3] Check status of high voltage\n");
-    printf("  [4] Nothing else\n");
+    printf("  [4] Check previously set voltage\n");
+    printf("  [5] Nothing else\n");
     fgets(user_input, NCHAR, stdin);
     userOption = strtol(user_input, &tmp, NCHAR);
-    if (userOption < 1 || userOption > 4)
+    if (userOption < 1 || userOption > 5)
     {
       printf("Try again!\n");
       continue;
@@ -106,13 +119,13 @@ int main(void)
         break;
 
       case 2:
-        printf("PREVIOUS VOLTAGE = %f\n", vprev);
-        printf("What is the max (PC) high voltage you want to set? > ");
+        printf("PREVIOUS VOLTAGE = %f V\n\n", vprev);
+        printf("What is the max (PC) high voltage you want to set? [0., 3276.] > ");
         fgets(user_input, NCHAR, stdin);
         vset = (float)atof(user_input);
         if (vset > HV_MAX || vset < 0.)
         {
-          printf("\n  !!! The voltage you input is out of bounds. Please try again.\n");
+          printf("\n  !!! The voltage you input is out of bounds (0. < HV < 3276.). Please try again.\n");
           break;
         }
         printf("\nYou input >> %f V <<\n", vset);
@@ -122,8 +135,7 @@ int main(void)
         }
         vtmp = vprev;
         vdiff = fabs(vset - vtmp);
-        printf("DEBUG:  vtmp = %f,  vdiff = %f\n", vtmp, vdiff);
-        //nincrements = (int)vdiff/DV;
+        printf("DEBUG:  [initial] vtmp = %f,  vdiff = %f\n", vtmp, vdiff);
         while (vtmp != vset)
         {
           if (vdiff < DV) // check if close to final voltage
@@ -134,13 +146,14 @@ int main(void)
           {
             vtmp += sign*DV;
           }
-          printf("DEBUG:  vtmp = %f\n", vtmp);
           vdiff = fabs(vset - vtmp);
-          printf("DEBUG:  vdiff = %f\n", vdiff);
+          printf("DEBUG:  [updated] vtmp = %f, vdiff = %f\n", vtmp, vdiff);
           setHV(vtmp);
         }
-        //setHV(vset);
+        // write vset to file
         vprev = vset;
+        tstamp = time(NULL);
+        fprintf(fp, "%f V %s", vprev, asctime(localtime(&tstamp)));
         break;
 
       case 3:
@@ -148,6 +161,11 @@ int main(void)
         break;
 
       case 4:
+        vread = readPrevHV(PREV_HV_FILE);
+        printf("PREVIOUSLY SET HV: %f V\n", vread);
+        break;
+
+      case 5:
         userDone = true;
         printf("Quitting program.. \n\n");
         break;
@@ -156,20 +174,28 @@ int main(void)
         printf("What...?\n");
         break;
     } // end switch statement
+
+    fclose(fp);
   } // end while loop
+
   return 0;
 }
 
-void checkHV(void)
+bool checkHV(void)
 {
+  bool HV_EN = true;
+
   printf("\nChecking status of high voltage lines...\n");
-  // send CAN msg to request low voltage status
   char *can_msg[] = {"dummy", "can0", "042#0000BEEFDEAD0000"};
   cansend(can_msg);
   delay(100);
+
   // read the sent-back msg and print results
   printf("  The high voltage is ON / OFF\n\n");
   // ...
+  //if (ON)
+  //  HV_EN = true;
+  return HV_EN;
 }
 
 void enableHV(int pwrEn)
@@ -190,7 +216,7 @@ void enableHV(int pwrEn)
   delay(100);
 }
 
-void setHV(float vset)
+int setHV(float vset)
 {
   if (vset > HV_MAX)
   {
@@ -205,7 +231,7 @@ void setHV(float vset)
   // convert into DAC input code
   int k = 0;
   k = (int)(pow(2,12) * dac_vout / DAC_VREF);
-  printf("  k = %X\n  k << 3 = %X\n", k, (k<<3));
+  printf("DEBUG:  k = %d,  k = %X (hex),  k << 3 = %X (hex)\n", k, k, (k<<3));
 
   // prepare CAN msg
   char msg[] = "050#0000000000000000";
@@ -213,13 +239,18 @@ void setHV(float vset)
   sprintf(tmp, "%X\n", (k<<3));
 //  printf("DEBUG:  msg = %s, len = %d\n", msg, strlen(msg));
   printf("DEBUG:  tmp = %s, len = %d\n", tmp, strlen(tmp));
+  if (strlen(tmp) > 5)
+  {
+    printf("  !!! Unable to set voltage. Please try again.\n");
+    return 1;
+  }
 
   int c = 0;
   int delta = 5-strlen(tmp);
   while (c < strlen(tmp)-1)
   {
     msg[4+c+delta] = tmp[c];
-    printf("  msg = %s, len = %d\n", msg, strlen(msg));
+//    printf("DEBUG:  msg = %s, len = %d\n", msg, strlen(msg));
     c++;
   }
 
@@ -227,7 +258,9 @@ void setHV(float vset)
   char *can_msg[] = {"dummy", "can0", msg};
   printf("DEBUG:  can_msg[2] = %s\n", can_msg[2]);
 //  cansend(can_msg);
-  delay(1000);
+  delay(3000);
+
+  return 0;
 }
 
 /* FOR TRIGGER BOARD
