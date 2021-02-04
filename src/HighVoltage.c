@@ -63,7 +63,7 @@ int main(void)
 
   /* read previously set voltage from file if starting up */
   float vprev = 0.;
-  vprev = readPrevHV(PREV_HV_FILE);
+  vprev = readPrevV(PREV_HV_FILE);
 
   /* check the high voltage status */
   if (!checkHV())
@@ -119,13 +119,14 @@ int main(void)
         break;
 
       case 2:
+        // need to make sure HV is enabled
         printf("PREVIOUS VOLTAGE = %f V\n\n", vprev);
-        printf("What is the max (PC) high voltage you want to set? [0., 3276.] > ");
+        printf("What is the max (PC) high voltage you want to set? [0., %.1f] > ", HV_MAX);
         fgets(user_input, NCHAR, stdin);
         vset = (float)atof(user_input);
         if (vset > HV_MAX || vset < 0.)
         {
-          printf("\n  !!! The voltage you input is out of bounds (0. < HV < 3276.). Please try again.\n");
+          printf("\n  !!! The voltage you input is out of bounds (0. < HV < %.1f). Please try again.\n", HV_MAX);
           break;
         }
         printf("\nYou input >> %f V <<\n", vset);
@@ -161,7 +162,7 @@ int main(void)
         break;
 
       case 4:
-        vread = readPrevHV(PREV_HV_FILE);
+        vread = readPrevV(PREV_HV_FILE);
         printf("PREVIOUSLY SET HV: %f V\n", vread);
         break;
 
@@ -262,19 +263,3 @@ int setHV(float vset)
 
   return 0;
 }
-
-/* FOR TRIGGER BOARD
-void setHV(void)
-{
-//  printf("Setting max high voltage to:   %f\n", hvSet);
-  // create a string based on hvSet
-//  char *can_msg[] = {"dummy", "can0", "050#0000BEEF0000DEAD"};
-  char *can_msg[] = {"dummy", "can0", "0AB#07FE000000000000"};
-  cansend(can_msg);
-  delay(1000);
-
-  char *can_msg_rcv[] = {"dummy", "can0", "0BC#0000FEED0000BEEF"};
-  cansend(can_msg_rcv);
-  delay(100);
-}
-*/

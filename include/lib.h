@@ -39,13 +39,13 @@ void statCheck(void);
 
 /*
  * function:    readPrevHV
- * description: reads last line of set_voltages.txt and extracts
- *              previously set high voltage value
+ * description: reads last line of a .txt file and extracts
+ *              previously set high/trigger voltage value
  *
  * parameters:  file name
  * return:      (float) previously set HV value
  */
-float readPrevHV(char *fname);
+float readPrevV(char *fname);
 
 /**************************************************
  *                NOT USED ANYMORE                *

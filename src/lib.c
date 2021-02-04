@@ -6,11 +6,13 @@
  */
 
 #include <ctype.h>
+#include <errno.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #include <wiringPi.h>
@@ -54,12 +56,23 @@ int checkYN(char *usr_inp)
   else return 3;
 }
 
-float readPrevHV(char *fname)
+float readPrevV(char *fname)
 {
-  FILE *fp = fopen("/home/pi/lvhv/set_voltages.txt", "r");
+  FILE *fp = fopen(fname, "r");
   char line[1024]= "";
   char c;
   int len = 0;
+
+  struct stat stat_record;
+  if (stat(fname, &stat_record))
+  {
+    printf("%s", strerror(errno));
+  }
+  else if (stat_record.st_size <= 1)
+  {
+    printf(" %s is empty! Returning 0.\n", fname);
+    return 0.;
+  }
 
   if (fp == NULL)
   {
@@ -110,7 +123,7 @@ float readPrevHV(char *fname)
   }
 
   vprev = (float)atof(vstr);
-//  printf("DEBUG: readPrevHV returns %f, vstr = %s\n", vprev, vstr);
+//  printf("DEBUG: readPrevV returns %f, vstr = %s\n", vprev, vstr);
 
   return vprev;
 }
