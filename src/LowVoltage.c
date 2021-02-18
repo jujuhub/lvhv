@@ -116,14 +116,27 @@ int main(void)
 
 void checkLV(void)
 {
+  float vmon_3v3 = 0., vmon_2v5 = 0., vmon_1v2 = 0.;
+
   printf("\nChecking status of low voltage lines...\n");
-  // send CAN msg to request low voltage status
+  // send CAN msg to request low voltage status (ON/OFF)
   char *can_msg[] = {"dummy", "can0", "022#0000DEADBEEF0000"};
   cansend(can_msg);
   delay(100);
   // read the sent-back msg and print results
-  printf("  The low voltage is ON / OFF\n\n");
-  // ...
+  printf("  The low voltage is << ON / OFF >>\n");
+
+  printf("\nChecking values of low voltage lines...\n");
+  // send CAN msg to request LV values (ADC)
+  char *can_msg1[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
+  cansend(can_msg1);
+  delay(1000);
+  // convert ADC values
+  printf("  The low voltages are: \n");
+  printf("    3V3 line: %f V\n", vmon_3v3);
+  printf("    2V5 line: %f V\n", vmon_2v5);
+  printf("    1V2 line: %f V\n", vmon_1v2);
+  printf("\n");
 }
 
 void powerLV(int pwrEn)

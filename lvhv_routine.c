@@ -124,9 +124,8 @@ int main(void)
     char *can_msg[] = {"dummy", "can0", "123#0000000000000000"};
     cansend(can_msg);
 //    delay(100); // need this delay to read data
-
 //    canread();
-    delay(1000);
+    delay(2000);
 
     // receive CAN msg with RH&T data
     // convert to human-readable format
@@ -139,6 +138,16 @@ int main(void)
     // probe for user input?
 
     // delays?
+
+    printf("Fetching light levels...\n");
+    char *can_msg1[] = {"dummy", "can0", "00D#000D000D000D000D"};
+    cansend(can_msg1);
+    delay(2000);
+
+    printf("Fetching low voltage values...\n");
+    char *can_msg2[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
+    cansend(can_msg2);
+    delay(2000);
 
   } // end main loop
 
