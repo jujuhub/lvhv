@@ -187,7 +187,7 @@ bool checkHV(void)
   bool HV_EN = true;
 
   printf("\nChecking status of high voltage lines...\n");
-  char *can_msg[] = {"dummy", "can0", "042#0000BEEFDEAD0000"};
+  char *can_msg[] = {"dummy", "can0", "034#0000BEEFDEAD0000"};
   cansend(can_msg);
   delay(100);
 
@@ -258,7 +258,7 @@ int setHV(float vset)
   // create a can_msg and then send
   char *can_msg[] = {"dummy", "can0", msg};
   printf("DEBUG:  can_msg[2] = %s\n", can_msg[2]);
-//  cansend(can_msg);
+  cansend(can_msg);
   delay(3000);
 
   return 0;
