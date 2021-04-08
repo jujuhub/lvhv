@@ -103,12 +103,12 @@ int main(void)
 // if (RHT == 'OK')
 //   proceed with routine
 // if (RHT != 'OK')
-  printf("WARNING!! RH&T levels are above threshold! Do you want to continue? (Y/N)> ");
+//  printf("WARNING!! RH&T levels are above threshold! Do you want to continue? (Y/N)> ");
   // wait for user input
   // keep reading RH&T until levels are OK?
 
 // after status checks come out OK
-  printf("Do you wish to turn on the HV? (Y/N)> ");
+//  printf("Do you wish to turn on the HV? (Y/N)> ");
 // wait for user input
 // if YES
 //    start HV turn on sequence.. call on a script?
@@ -119,7 +119,7 @@ int main(void)
 
   while (1)
   {
-    printf("Fetching RH&T data...\n");
+    printf("\n\nFetching RH&T data...\n");
     // send CAN msg to request RH&T
     char *can_msg_rht[] = {"dummy", "can0", "123#0000000000000000"};
     cansend(can_msg_rht);
