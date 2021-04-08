@@ -121,11 +121,11 @@ int main(void)
   {
     printf("Fetching RH&T data...\n");
     // send CAN msg to request RH&T
-    char *can_msg[] = {"dummy", "can0", "123#0000000000000000"};
-    cansend(can_msg);
+    char *can_msg_rht[] = {"dummy", "can0", "123#0000000000000000"};
+    cansend(can_msg_rht);
 //    delay(100); // need this delay to read data
 //    canread();
-    delay(2000);
+    delay(3000);
 
     // receive CAN msg with RH&T data
     // convert to human-readable format
@@ -137,17 +137,28 @@ int main(void)
 
     // probe for user input?
 
-    // delays?
 
+    // send CAN msg to request photodiode levels
     printf("Fetching light levels...\n");
-    char *can_msg1[] = {"dummy", "can0", "00D#000D000D000D000D"};
-    cansend(can_msg1);
-    delay(2000);
+    char *can_msg_pd[] = {"dummy", "can0", "00D#000D000D000D000D"};
+    cansend(can_msg_pd);
+    delay(3000);
 
+    // send CAN msg to request low voltage outputs
     printf("Fetching low voltage values...\n");
-    char *can_msg2[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
-    cansend(can_msg2);
-    delay(2000);
+    char *can_msg_lv[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
+    cansend(can_msg_lv);
+    delay(3000);
+
+    // send CAN msg to request trigger board thresholds
+    printf("Fetching trigger board threshold voltages...\n");
+    char *can_msg_dac0[] = {"dummy", "can0", "0BC#0000000000000000"}; 
+    cansend(can_msg_dac0);
+    delay(3000);
+
+    char *can_msg_dac1[] = {"dummy", "can0", "0EF#0000000000000000"};
+    cansend(can_msg_dac1);
+    delay(48000);
 
   } // end main loop
 

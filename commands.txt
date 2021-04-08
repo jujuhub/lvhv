@@ -1,0 +1,6 @@
+# set up CAN
+sudo /sbin/ip link set can0 up type can bitrate 250000
+ip link show
+
+# compile progs
+gcc -o [progname] lvhv_routine.c src/canlib.c src/lib.c -lwiringPi -Iinclude -O2 -Wall -Wno-parentheses
