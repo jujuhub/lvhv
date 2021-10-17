@@ -5,6 +5,19 @@
  *    header for lib.c
  */
 
+#include <ctype.h>
+#include <errno.h>
+#include <glob.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+#include <wiringPi.h>
+
 #define RLY1 25
 #define RLY2 28
 #define RLY3 29
@@ -12,6 +25,16 @@
 #define LOW 0
 #define HIGH 1
 #define OPSDLY 1000 // delay between measurements
+
+struct SlowControlsData {
+  double hum, temp;
+  bool lv_en;
+  double lvA, lvB, lvC;
+  bool hv_en;
+  double hv;
+  double photodiode;
+  double trig_dac0, trig_dac1;
+};
 
 /* checks if user input is alpha valid */
 bool isValidInput(char *usr_inp);
@@ -45,7 +68,14 @@ void statCheck(void);
  * parameters:  file name
  * return:      (float) previously set HV value
  */
-float readPrevV(char *fname);
+float readPrevHV(char *fname);
+
+int decodeCANmsg(struct SlowControlsData *sc, char *rcv_msg);
+void decodeRHT(struct SlowControlsData *sc, char *canmsg);
+void decodeLV(struct SlowControlsData *sc, char *canmsg);
+void decodeHV(struct SlowControlsData *sc, char *canmsg);
+void decodePhotodiode(struct SlowControlsData *sc, char *canmsg);
+void decodeTrigBd(struct SlowControlsData *sc, char *canmsg);
 
 /**************************************************
  *                NOT USED ANYMORE                *
@@ -81,3 +111,4 @@ void initRelayHAT(void);
  * return:      none
  */
 void relayHAT(int rlyN, int rlyEN);
+

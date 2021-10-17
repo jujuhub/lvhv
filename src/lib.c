@@ -5,18 +5,6 @@
  *    contains functions used in lvhv_routine.c
  */
 
-#include <ctype.h>
-#include <errno.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <unistd.h>
-#include <wiringPi.h>
-
 #include "lib.h"
 #include "canlib.h"
 
@@ -56,7 +44,7 @@ int checkYN(char *usr_inp)
   else return 3;
 }
 
-float readPrevV(char *fname)
+float readPrevHV(char *fname)
 {
   FILE *fp = fopen(fname, "r");
   char line[1024]= "";
@@ -123,7 +111,7 @@ float readPrevV(char *fname)
   }
 
   vprev = (float)atof(vstr);
-//  printf("DEBUG: readPrevV returns %f, vstr = %s\n", vprev, vstr);
+//  printf("DEBUG: readPrevHV returns %f, vstr = %s\n", vprev, vstr);
 
   return vprev;
 }
@@ -196,6 +184,136 @@ void statCheck(void)
       } // end inner INIT_STAT while loop
     }
   } // end INIT_STAT while loop
+}
+
+void decodeRHT(struct SlowControlsData *sc, char *canmsg)
+{
+  char hum_data[5], temp_data[5];
+
+  strncpy(hum_data, canmsg+6, 4);   //hum data starts at 3rd byte
+  hum_data[4] = '\0';
+  strncpy(temp_data, canmsg+10, 4); //temp data starts at 7th byte
+  temp_data[4] ='\0';
+  printf("hum_data: %s \ntemp_data: %s\n", hum_data, temp_data);
+
+  //convert str to int
+  int hex_hum, hex_temp;
+  hex_hum = (int)strtol(hum_data, NULL, 16);
+  hex_temp = (int)strtol(temp_data, NULL, 16);
+
+  //shift hex values
+  hex_hum &= ~(0x03 << 14);
+  hex_temp = hex_temp >> 2;
+
+  //calculate hum & temp
+  sc->hum = (double)hex_hum / (pow(2,14) - 2.) * 100.;
+  sc->temp = (double)hex_temp / pow(2,14) * 165. - 40.;
+
+  return;
+}
+
+void decodeLV(struct SlowControlsData *sc, char *canmsg)
+{
+  char msgID[4];
+  strncpy(msgID, canmsg, 3);
+  msgID[3] = '\0';
+
+  if (strcmp(msgID, "220") == 0)
+  {
+    bool lv_on_off;
+    char lv_data[3];
+    strncpy(lv_data, canmsg+6, 2);
+    lv_data[2] = '\0';
+    //printf("lv_data: %s\n", lv_data); //DEBUG
+
+    if ((int)strtol(lv_data, NULL, 16) == 1) { lv_on_off = true; }
+    else if ((int)strtol(lv_data, NULL, 16) == 0) { lv_on_off = false; }
+    else { printf(" @@@ error reading LV status!! undefined !!!\n"); return; }
+
+    sc->lv_en = lv_on_off;
+  }
+
+  if (strcmp(msgID, "3DA") == 0)
+  {
+    char lvA_data[5], lvB_data[5], lvC_data[5];
+    strncpy(lvA_data, canmsg+4, 4);
+    lvA_data[4] = '\0';
+    strncpy(lvB_data, canmsg+10, 4);
+    lvB_data[4] = '\0';
+    strncpy(lvC_data, canmsg+16, 4);
+    lvC_data[4] = '\0';
+    printf(" lv{ABC}_data: %s %s %s\n", lvA_data, lvB_data, lvC_data);
+
+    int hex_lvA = 0, hex_lvB = 0, hex_lvC = 0;
+    hex_lvA = (int)strtol(lvA_data, NULL, 16);
+    hex_lvB = (int)strtol(lvB_data, NULL, 16);
+    hex_lvC = (int)strtol(lvC_data, NULL, 16);
+
+    //calculate low voltages
+    sc->lvA = (double)hex_lvA * 5./1000.; //TODO:check conversion
+    sc->lvB = (double)hex_lvB * 5./1000.;
+    sc->lvC = (double)hex_lvC * 5./1000.;
+  }
+    
+  return;
+}
+
+void decodeHV(struct SlowControlsData *sc, char *canmsg)
+{
+  // get HV enabled status
+  bool hv_on_off;
+  char hv_data[3];
+  strncpy(hv_data, canmsg+6, 2);
+  hv_data[2] = '\0';
+
+  if ((int)strtol(hv_data, NULL, 16) == 1) { hv_on_off = true; }
+  else if ((int)strtol(hv_data, NULL, 16) == 0) { hv_on_off = false; }
+  else { printf(" @@@ error reading HV status!! undefined !!!\n"); return; }
+
+  sc->hv_en = hv_on_off;
+
+  // get actual HV value at photocathode
+  char pchv_data[5];
+  strncpy(pchv_data, canmsg+10, 4);
+  pchv_data[4] = '\0';
+
+  // calculate HV
+  int hex_hv = (int)strtol(pchv_data, NULL, 16);
+  sc->hv = (double)hex_hv * 5./1000.; //TODO:check conversion
+
+  return;
+}
+
+void decodePhotodiode(struct SlowControlsData *sc, char *canmsg)
+{
+  char pd_data[5];
+  strncpy(pd_data, canmsg+4, 4);
+  pd_data[4] = '\0';
+
+  int hex_pd = (int)strtol(pd_data, NULL, 16);
+  sc->photodiode = (double)hex_pd * 5./1000.; //TODO:check conversion
+
+  return;
+}
+
+void decodeTrigBd(struct SlowControlsData *sc, char *canmsg)
+{
+  char msgID[4];
+  strncpy(msgID, canmsg, 3);
+  msgID[3] = '\0';
+
+  char trig_data[4];
+  strncpy(trig_data, canmsg+6, 3);
+  trig_data[3] = '\0';
+
+  int hex_trig = (int)strtol(trig_data, NULL, 16);
+  double trig_thr = hex_trig * 4.096 / pow(2,12);   //see LTC2631 datasheet
+                                                    //TODO:double check conversion
+
+  if (strcmp(msgID, "0CB") == 0) { sc->trig_dac0 = trig_thr; }
+  if (strcmp(msgID, "0FE") == 0) { sc->trig_dac1 = trig_thr; }
+
+  return;
 }
 
 

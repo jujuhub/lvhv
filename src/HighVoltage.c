@@ -63,7 +63,7 @@ int main(void)
 
   /* read previously set voltage from file if starting up */
   float vprev = 0.;
-  vprev = readPrevV(PREV_HV_FILE);
+  vprev = readPrevHV(PREV_HV_FILE);
 
   /* check the high voltage status */
   if (!checkHV())
@@ -162,7 +162,7 @@ int main(void)
         break;
 
       case 4:
-        vread = readPrevV(PREV_HV_FILE);
+        vread = readPrevHV(PREV_HV_FILE);
         printf("PREVIOUSLY SET HV: %f V\n", vread);
         break;
 

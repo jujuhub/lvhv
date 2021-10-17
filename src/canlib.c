@@ -11,24 +11,8 @@
  * See: https://github.com/linux-can/can-utils
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <net/if.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-
-#include <linux/can.h>
-#include <linux/can/error.h>
-#include <linux/can/raw.h>
-
-#include <canlib.h>
-
-#define CANID_DELIM '#'
-#define DATA_SEPARATOR '.'
-#define CAN_DLC 8
+#include "canlib.h"
+#include "lib.h"
 
 
 const char hex_asc_upper[] = "0123456789ABCDEF";
@@ -261,18 +245,18 @@ int cansend(char **cs)
   return 0;
 }
 
-int canread()
+int canread() // TODO:pass in empty string
 {
   int s;
-  int nbytes;
   struct sockaddr_can addr;
   struct ifreq ifr;
   struct canfd_frame frame;
 
+  // open can socket
   if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
   {
     perror("socket");
-    return 1;
+    return -1;
   }
 
   strcpy(ifr.ifr_name, "can0"); // hardcoded device name
@@ -285,27 +269,188 @@ int canread()
   if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
   {
     perror("bind");
-    return 1;
+    return -1;
   }
 
-  nbytes = read(s, &frame, sizeof(struct can_frame));
 
-  if (nbytes < 0)
+  // read can msg
+  int nbytes = 0;
+  int read_attempts = 0;
+  fd_set readfds;
+  struct timeval tv;
+  int selret;
+
+  char rcv_ID[5];
+  char rcv_tmp[3];
+  char *rcv_msg; rcv_msg = (char *) malloc(256);
+  char *empty; empty = (char *) malloc(256);
+
+  while (1)
   {
-    perror("read");
+    if (read_attempts == MAX_READ_ATTEMPTS)
+    {
+      fprintf(stderr, "\n @@@ TOO MANY READ ATTEMPTS!! Moving on..\n\n");
+      close(s);
+      return -2; // TODO:return empty string
+    }
+
+    // prepare for select()
+    FD_ZERO(&readfds);
+    FD_SET(s, &readfds);
+    // wait for x [s] and y [us]
+    tv.tv_sec = 0;
+    tv.tv_usec = 1000;
+
+    // monitor socket s, for a time tv
+    selret = select(s+1, &readfds, NULL, NULL, &tv);
+    if (selret == -1)
+    {
+      perror("select() returned -1");
+    }
+    else if (selret)
+    {
+      printf(" Data is available now.\n"); //debug
+      nbytes = read(s, &frame, sizeof(struct can_frame));
+    }
+    else
+    {
+      printf(" @@@ No data found.\n");
+    }
+
+//    nbytes = read(s, &frame, sizeof(struct can_frame));
+
+    if (nbytes <= 0)
+    {
+      perror("canread");
+      read_attempts++;
+      continue;
+      //return 1;
+    }
+
+    // put together the message
+    sprintf(rcv_ID, "%03X%c", frame.can_id, '#');
+    rcv_ID[4] = '\0';
+    strcpy(rcv_msg, rcv_ID);
+    unsigned int frlen = frame.len;
+    for (int i = 0; i < frlen; i++)
+    {
+      sprintf(rcv_tmp, "%02X", frame.data[i]);
+      strcat(rcv_msg, rcv_tmp);
+    }
+
     return 1;
-  }
+
+  } //end while loop
 
   printf("0x%03X [%d] ", frame.can_id, CAN_DLC);
-
-  for (int i = 0; i < CAN_DLC; i++)
-  {
-    printf("%02X ", frame.data[i]);
-  }
-
+  for (int i = 0; i < CAN_DLC; i++) { printf("%02X ", frame.data[i]); }
   printf("\n");
 
   close(s);
 
+  return 1;
+}
+
+int decodeCANmsg(struct SlowControlsData *sc, char *rcv_msg)
+{
+  char msgID[4];
+  strncpy(msgID, rcv_msg, 3);
+  msgID[3] = '\0';
+
+  if (strcmp(msgID, "321") == 0)
+  { // hum & temp
+    decodeRHT(sc, rcv_msg);
+  }
+  else if ((strcmp(msgID, "220") == 0) || (strcmp(msgID, "3DA") == 0))
+  { // low voltage
+    decodeLV(sc, rcv_msg);
+  }
+  else if (strcmp(msgID, "035") == 0)
+  { // high voltage
+    decodeHV(sc, rcv_msg);
+  }
+  else if (strcmp(msgID, "0D0") == 0)
+  { // photodiode
+    decodePhotodiode(sc, rcv_msg);
+  }
+  else if ((strcmp(msgID, "0CB") == 0) || (strcmp(msgID, "0FE") == 0))
+  { // trigger bd
+    decodeTrigBd(sc, rcv_msg);
+  }
+  else { printf(" @@@ unrecognized msg ID !!!\n"); return -3; }
+
+  return 1;
+}
+
+int readcanlog(char *fname)
+{
+  bool new_msg = false;
+
+  FILE *fp = fopen(fname, "r");
+  char line[1024] = "";
+  char c;
+  int len = 0;
+
+  struct stat stat_record;
+  if (stat(fname, &stat_record))
+  {
+    printf("%s", strerror(errno));
+  }
+  else if (stat_record.st_size <= 1)
+  {
+    printf(" %s is empty!\n", fname);
+    return -99;
+  }
+
+  if (fp == NULL)
+  {
+    printf("  !!! Could not open file!\n");
+    return -99;
+  }
+
+  fseek(fp, -1, SEEK_END);
+  c = fgetc(fp);
+
+  while (c == '\n')
+  {
+    fseek(fp, -2, SEEK_CUR);
+    c = fgetc(fp);
+  }
+
+  while (c != '\n')
+  {
+    fseek(fp, -2, SEEK_CUR);
+    ++len;
+    c = fgetc(fp);
+  }
+
+  fseek(fp, 0, SEEK_CUR);
+
+  if (fgets(line, len+1, fp) != NULL) puts(line); 
+  else
+  {
+    printf("  !!! Error reading line!\n");
+    return -99;
+  }
+  fclose(fp);
+
+  // extract CAN msg
+  int l = 0;
+  char decdate[15] = "";
+  char msgID[5] = ""; // uint32_t
+  char canmsg[20] = "";
+
+  for (l = 0; l < strlen(line); l++)
+  {
+    // extract date
+    decdate[l] = line[l];
+
+    // extract msg ID
+    // extract can msg
+  }
+  
+//  switch(msgID):
+
   return 0;
+
 }
