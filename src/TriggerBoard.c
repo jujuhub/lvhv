@@ -97,12 +97,12 @@ int main(void)
           printf("Oopsies!\n");
           break;
         }
-        printf("What threshold would you like to set for this trigger? [0., %0.1f] V > ", TRIG_MAX);
+        printf("What threshold would you like to set for this trigger? [0., %0.1f] V > ", VREF);
         fgets(user_input, NCHAR, stdin);
         setTrig = (float)atof(user_input);
-        if (setTrig > TRIG_MAX || setTrig < 0.)
+        if (setTrig > VREF || setTrig < 0.)
         {
-          printf("\n  The value entered is out of bounds (0. < trg < %.1f). Please try again.\n", TRIG_MAX);
+          printf("\n  The value entered is out of bounds (0. < trg < %.1f). Please try again.\n", VREF);
           break;
         }
         printf("\nYou entered >> %f V <<\n", setTrig);
@@ -167,10 +167,7 @@ void checkTrigger(int dac_i)
 
 int setTrigger(int dac_i, float setTrig)
 {
-  if (setTrig > TRIG_MAX)
-  {
-    setTrig = TRIG_MAX;
-  }
+  if (setTrig > VREF) { setTrig = VREF; }
 
   char msg[] = "000#0000000000000000";
   char tmp[17];
@@ -191,7 +188,7 @@ int setTrigger(int dac_i, float setTrig)
 
   // convert voltage to hex code
   int k = 0;
-  k = (int)(setTrig * 4096. / VREF);
+  k = (int)(setTrig * 4095 / VREF);
   printf("DEBUG:  k = %d, %X (hex)\n", k, k);
   sprintf(tmp, "%X", k);
   printf("DEBUG:  tmp = %s, len = %d\n", tmp, strlen(tmp));

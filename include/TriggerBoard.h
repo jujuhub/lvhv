@@ -8,8 +8,8 @@
 #define NCHAR 10
 #define DAC0 0
 #define DAC1 1
-#define TRIG_MAX 3.3 // V
-#define VREF 2.981 //3.3 // V
+#define TRIG_MAX 3.0 // V
+#define VREF 2.981 //ideally 3.0V
 
 /*
  * function:    checkTrigger

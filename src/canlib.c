@@ -245,7 +245,7 @@ int cansend(char **cs)
   return 0;
 }
 
-int canread() // TODO:pass in empty string
+int canread(char *rcv_msg)
 {
   int s;
   struct sockaddr_can addr;
@@ -280,18 +280,19 @@ int canread() // TODO:pass in empty string
   struct timeval tv;
   int selret;
 
-  char rcv_ID[5];
+  char rcvID[5];
   char rcv_tmp[3];
-  char *rcv_msg; rcv_msg = (char *) malloc(256);
-  char *empty; empty = (char *) malloc(256);
+  //char *rcv_msg; rcv_msg = (char *) malloc(256);
+  //char *empty; empty = (char *) malloc(256);
 
-  while (1)
+  bool msgReceived = false;
+  while (!msgReceived)
   {
     if (read_attempts == MAX_READ_ATTEMPTS)
     {
       fprintf(stderr, "\n @@@ TOO MANY READ ATTEMPTS!! Moving on..\n\n");
       close(s);
-      return -2; // TODO:return empty string
+      return -2;
     }
 
     // prepare for select()
@@ -303,48 +304,53 @@ int canread() // TODO:pass in empty string
 
     // monitor socket s, for a time tv
     selret = select(s+1, &readfds, NULL, NULL, &tv);
-    if (selret == -1)
-    {
-      perror("select() returned -1");
-    }
+    if (selret == -1) { perror("select() returned -1"); }
     else if (selret)
     {
-      printf(" Data is available now.\n"); //debug
+      printf(" Data is available now. Reading data...\n"); //debug
       nbytes = read(s, &frame, sizeof(struct can_frame));
     }
     else
     {
-      printf(" @@@ No data found.\n");
+      printf(" @@@ No data found. Trying again...\n");
+      continue;
     }
 
-//    nbytes = read(s, &frame, sizeof(struct can_frame));
+    //nbytes = read(s, &frame, sizeof(struct can_frame));
 
     if (nbytes <= 0)
     {
       perror("canread");
       read_attempts++;
       continue;
-      //return 1;
+    }
+    else
+    { // put together the msg
+      sprintf(rcvID, "%03X%c", frame.can_id, '#');
+      //sprintf(rcvID, "%03X%c", 0x0D0, '#'); //test
+      rcvID[4] = '\0';
+      strcpy(rcv_msg, rcvID);
+      unsigned int frlen = frame.len;
+      //unsigned int frlen = 8; //test
+      for (int i = 0; i < frlen; i++)
+      {
+        sprintf(rcv_tmp, "%02X", frame.data[i]);
+        //sprintf(rcv_tmp, "%02X", 0x11); //test
+        strcat(rcv_msg, rcv_tmp);
+      }
+      rcv_msg[20] = '\0';
+
+      msgReceived = true;
+      //close(s);
     }
 
-    // put together the message
-    sprintf(rcv_ID, "%03X%c", frame.can_id, '#');
-    rcv_ID[4] = '\0';
-    strcpy(rcv_msg, rcv_ID);
-    unsigned int frlen = frame.len;
-    for (int i = 0; i < frlen; i++)
-    {
-      sprintf(rcv_tmp, "%02X", frame.data[i]);
-      strcat(rcv_msg, rcv_tmp);
-    }
-
-    return 1;
-
+    //return 1;
   } //end while loop
 
-  printf("0x%03X [%d] ", frame.can_id, CAN_DLC);
-  for (int i = 0; i < CAN_DLC; i++) { printf("%02X ", frame.data[i]); }
-  printf("\n");
+  // print received message (above return needs to be commented out)
+  //printf("0x%03X [%d] ", frame.can_id, CAN_DLC);
+  //for (int i = 0; i < CAN_DLC; i++) { printf("%02X ", frame.data[i]); }
+  //printf("\n");
 
   close(s);
 

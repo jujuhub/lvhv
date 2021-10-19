@@ -194,7 +194,7 @@ void decodeRHT(struct SlowControlsData *sc, char *canmsg)
   hum_data[4] = '\0';
   strncpy(temp_data, canmsg+10, 4); //temp data starts at 7th byte
   temp_data[4] ='\0';
-  printf("hum_data: %s \ntemp_data: %s\n", hum_data, temp_data);
+  printf("hum_data (raw): %s \ntemp_data (raw): %s\n", hum_data, temp_data);  //debug
 
   //convert str to int
   int hex_hum, hex_temp;
@@ -250,9 +250,9 @@ void decodeLV(struct SlowControlsData *sc, char *canmsg)
     hex_lvC = (int)strtol(lvC_data, NULL, 16);
 
     //calculate low voltages
-    sc->lvA = (double)hex_lvA * 5./1000.; //TODO:check conversion
-    sc->lvB = (double)hex_lvB * 5./1000.;
-    sc->lvC = (double)hex_lvC * 5./1000.;
+    sc->lvA = (double)hex_lvA * ADC_CONVERSION;
+    sc->lvB = (double)hex_lvB * ADC_CONVERSION;
+    sc->lvC = (double)hex_lvC * ADC_CONVERSION;
   }
     
   return;
@@ -279,7 +279,7 @@ void decodeHV(struct SlowControlsData *sc, char *canmsg)
 
   // calculate HV
   int hex_hv = (int)strtol(pchv_data, NULL, 16);
-  sc->hv = (double)hex_hv * 5./1000.; //TODO:check conversion
+  sc->hv = (double)hex_hv * ADC_CONVERSION;
 
   return;
 }
@@ -291,13 +291,14 @@ void decodePhotodiode(struct SlowControlsData *sc, char *canmsg)
   pd_data[4] = '\0';
 
   int hex_pd = (int)strtol(pd_data, NULL, 16);
-  sc->photodiode = (double)hex_pd * 5./1000.; //TODO:check conversion
+  sc->photodiode = (double)hex_pd * ADC_CONVERSION;
 
   return;
 }
 
 void decodeTrigBd(struct SlowControlsData *sc, char *canmsg)
 {
+  //TODO:implement reading power code
   char msgID[4];
   strncpy(msgID, canmsg, 3);
   msgID[3] = '\0';
@@ -307,8 +308,7 @@ void decodeTrigBd(struct SlowControlsData *sc, char *canmsg)
   trig_data[3] = '\0';
 
   int hex_trig = (int)strtol(trig_data, NULL, 16);
-  double trig_thr = hex_trig * 4.096 / pow(2,12);   //see LTC2631 datasheet
-                                                    //TODO:double check conversion
+  double trig_thr = hex_trig * 3.0 / 4096; //see MCP4725 datasheet
 
   if (strcmp(msgID, "0CB") == 0) { sc->trig_dac0 = trig_thr; }
   if (strcmp(msgID, "0FE") == 0) { sc->trig_dac1 = trig_thr; }

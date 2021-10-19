@@ -62,7 +62,7 @@ int parse_canframe(char *cs, struct canfd_frame *cf);
 
 int cansend(char **cs);
 
-int canread();
+int canread(char *rcv_msg);
 
 int readcanlog(char *fpath);
 

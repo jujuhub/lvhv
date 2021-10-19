@@ -5,7 +5,16 @@
  *    header for HighVoltage.c
  */
 
+#include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <wiringPi.h>
+
 #define NCHAR 10
+#define MSEC 1000 //millisecond
 #define C40N_MAX 4000.0 // V
 #define HV_MAX 3276.0
 #define DAC_VMAX 5.0

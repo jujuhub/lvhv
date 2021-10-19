@@ -21,10 +21,12 @@
 #define RLY1 25
 #define RLY2 28
 #define RLY3 29
-#define RLYDLY 500 // relay delay
+#define RLYDLY 500 // relay delay [ms]
 #define LOW 0
 #define HIGH 1
-#define OPSDLY 1000 // delay between measurements
+#define OPSDLY 1000 // delay between measurements [ms]
+#define USLP 1  //us
+#define ADC_CONVERSION 0.00488  //5V/1024 bits
 
 struct SlowControlsData {
   double hum, temp;

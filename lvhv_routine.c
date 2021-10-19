@@ -4,10 +4,14 @@
  * written by: J. He
  *
  * purpose
- *    this manages the slow controls routine of the LVHV board
- *      - fetches RH&T data
+ *    manages the slow controls routine of the LVHV board
+ *      - humidity, temperature
+ *      - photodiode
+ *      - low voltages
+ *      - high voltage
+ *      - trigger board thresholds
  * usage
- *    user needs to execute the program and let it run
+ *    user just needs to execute the program and let it run
  *      ./SlowControl
  */
 
@@ -155,7 +159,8 @@ int main(void)
   //char mainfile[] = "";
   //strcpy(mainfile, globlist.gl_pathv[globlist.gl_pathc-1]);
 
-  // test struct
+
+  /*** test struct ***/
   //char dummy_msg[21] = "321#0153286D3A000000";
   //char dummy_msg[21] = "220#0001000100010001";
   char dummy_msg[21] = "3DA#02EF00026C000162";
@@ -169,6 +174,9 @@ int main(void)
   //printf(sc.lv_en ? "enabled\n" : "disabled\n");
   printf(" low voltages are: %0.2f V, %0.2f V, %0.2f V\n", sc.lvA, sc.lvB, sc.lvC);
 
+  int rcvStat = -8;  //can msg receive status
+  char rcv_msg[21];
+  //bool dataFetched = false;
   while (1)
   {
     if (use_canlogs)
@@ -196,9 +204,17 @@ int main(void)
     char *can_msg_rht[] = {"dummy", "can0", "123#0000000000000000"};
     cansend(can_msg_rht);
 //    delay(1*MSEC); // need this delay to read data
-//    canread();
+    usleep(USLP);
+    rcvStat = canread(rcv_msg);
+    //printf("rcv_msg: %s \nlength of rcv_msg: %u\n", rcv_msg, strlen(rcv_msg)); //DEBUG
+    if (rcvStat == 1)
+    {
+      decodeCANmsg(&sc, rcv_msg);
+      printf(" > humidity: %.1f %%\n > temperature: %.1f deg C\n", sc.hum, sc.temp);
+    }
+    else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
-    delay(7*MSEC);
+    rcv_msg[0] = '\0';
 
     // receive CAN msg with RH&T data
     // convert to human-readable format
@@ -214,21 +230,48 @@ int main(void)
     printf("Fetching light levels...\n");
     char *can_msg_pd[] = {"dummy", "can0", "00D#000D000D000D000D"};
     cansend(can_msg_pd);
-//    delay(10*MSEC);
+    usleep(USLP);
+    rcvStat = canread(rcv_msg);
+    if (rcvStat == 1)
+    {
+      decodeCANmsg(&sc, rcv_msg);
+      printf(" > photodiode: %.1f %%\n", sc.photodiode);
+    }
+    else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+    delay(3*MSEC);
+    rcv_msg[0] = '\0';
 
 
     /*** read back low voltages ***/
     printf("Fetching low voltage values...\n");
     char *can_msg_lv[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
     cansend(can_msg_lv);
-//    delay(10*MSEC);
+    usleep(USLP);
+    rcvStat = canread(rcv_msg);
+    if (rcvStat == 1)
+    {
+      decodeCANmsg(&sc, rcv_msg);
+      printf(" > low voltages: %.1f V, %.1f V, %.f V.\n", sc.lvA, sc.lvB, sc.lvC);
+    }
+    else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+    delay(3*MSEC);
+    rcv_msg[0] = '\0';
 
 
     /*** check high voltage ***/
     printf("Fetching high voltage status...\n");
     char *can_msg_hv[] = {"dummy", "can0", "034#0000BEEFDEAD0000"};
     cansend(can_msg_hv);
-//    delay(10*MSEC);
+    usleep(USLP);
+    rcvStat = canread(rcv_msg);
+    if (rcvStat == 1)
+    {
+      decodeCANmsg(&sc, rcv_msg);
+      printf(" > high voltage: %.1f V\n", sc.hv);
+    }
+    else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+    delay(3*MSEC);
+    rcv_msg[0] = '\0';
 
 
     /*** read back trigger board thresholds ***/ 
@@ -237,11 +280,29 @@ int main(void)
       printf("Fetching trigger board threshold voltages...\n");
       char *can_msg_dac0[] = {"dummy", "can0", "0BC#0000000000000000"}; 
       cansend(can_msg_dac0);
-//    delay(10*MSEC);
+      usleep(USLP);
+      rcvStat = canread(rcv_msg);
+      if (rcvStat == 1)
+      {
+        decodeCANmsg(&sc, rcv_msg);
+        printf(" > trigger bd DAC0: %.1f V\n", sc.trig_dac0);
+      }
+      else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+      delay(3*MSEC);
+      rcv_msg[0] = '\0';
 
       char *can_msg_dac1[] = {"dummy", "can0", "0EF#0000000000000000"};
       cansend(can_msg_dac1);
-//    delay(40*MSEC);
+      usleep(USLP);
+      rcvStat = canread(rcv_msg);
+      if (rcvStat == 1)
+      {
+        decodeCANmsg(&sc, rcv_msg);
+        printf(" > trigger bd DAC1: %.1f V\n", sc.trig_dac1);
+      }
+      else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+      delay(3*MSEC);
+      rcv_msg[0] = '\0';
     }
 
   } // end main loop
