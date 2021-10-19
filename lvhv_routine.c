@@ -20,7 +20,6 @@
 
 #define FILEPATH "/home/pi/can-/candump*.log"
 #define USE_CANLOGS 0 //bool
-#define MSEC 1000 //milliseconds
 
 int main(void)
 {

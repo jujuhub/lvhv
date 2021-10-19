@@ -26,6 +26,7 @@
 #define HIGH 1
 #define OPSDLY 1000 // delay between measurements [ms]
 #define USLP 1  //us
+#define MSEC 1000 //milliseconds
 #define ADC_CONVERSION 0.00488  //5V/1024 bits
 
 struct SlowControlsData {

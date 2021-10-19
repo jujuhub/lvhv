@@ -5,15 +5,10 @@
  *    enables/disables the low voltage lines on LVHV board
  */
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wiringPi.h>
-
 #include "LowVoltage.h"
 #include "canlib.h"
 #include "lib.h"
+
 
 int main(void)
 {
@@ -116,27 +111,50 @@ int main(void)
 
 void checkLV(void)
 {
-  float vmon_3v3 = 0., vmon_2v5 = 0., vmon_1v2 = 0.;
+  //double vmon_3v3 = 0., vmon_2v5 = 0., vmon_1v2 = 0.;
+  bool LV_EN = false;
+  int rcvStat = -8;
+  char rcv_msg[21];
+  struct SlowControlsData sc;
 
   printf("\nChecking status of low voltage lines...\n");
   // send CAN msg to request low voltage status (ON/OFF)
   char *can_msg[] = {"dummy", "can0", "022#0000DEADBEEF0000"};
   cansend(can_msg);
-  delay(100);
-  // read the sent-back msg and print results
-  printf("  The low voltage is << ON / OFF >>\n");
+  usleep(USLP);
+  rcvStat = canread(rcv_msg);
+  if (rcvStat == 1)
+  {
+    decodeCANmsg(&sc, rcv_msg);
+    LV_EN = sc.lv_en;
+    printf("  The low voltage is >>> ");
+    printf(LV_EN ? "ENABLED (ON)\n" : "DISABLED (OFF)\n");
+  }
+  else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+  delay(3*MSEC);
+  rcv_msg[0] = '\0';
 
   printf("\nChecking values of low voltage lines...\n");
   // send CAN msg to request LV values (ADC)
   char *can_msg1[] = {"dummy", "can0", "3AD#00AD00AD00AD00AD"};
   cansend(can_msg1);
-  delay(1000);
+  usleep(USLP);
+  rcvStat = canread(rcv_msg);
+  if (rcvStat == 1)
+  {
+    decodeCANmsg(&sc, rcv_msg);
+    printf(" > low voltages: %.1f V, %.1f V, %.f V.\n", sc.lvA, sc.lvB, sc.lvC);
+  }
+  else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+  delay(3*MSEC);
+  rcv_msg[0] = '\0';
+
   // convert ADC values
-  printf("  The low voltages are: \n");
-  printf("    3V3 line: %f V\n", vmon_3v3);
-  printf("    2V5 line: %f V\n", vmon_2v5);
-  printf("    1V2 line: %f V\n", vmon_1v2);
-  printf("\n");
+  //printf("  The low voltages are: \n");
+  //printf("    3V3 line: %f V\n", vmon_3v3);
+  //printf("    2V5 line: %f V\n", vmon_2v5);
+  //printf("    1V2 line: %f V\n", vmon_1v2);
+  //printf("\n");
 }
 
 void powerLV(int pwrEn)

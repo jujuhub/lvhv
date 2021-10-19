@@ -120,7 +120,7 @@ void fetchRHT(void)
 {
   char *can_msg[] = {"dummy", "can0", "123#0000000000000000"};
   cansend(can_msg);
-  delay(OPSDLY);
+  delay(MSEC);
 }
 
 void statCheck(void)

@@ -178,17 +178,27 @@ int main(void)
 bool checkHV(void)
 {
   bool HV_EN = false;
+  int rcvStat = -8;
+  char rcv_msg[21];
+  struct SlowControlsData sc;
 
   printf("\nChecking status of high voltage lines...\n");
   char *can_msg[] = {"dummy", "can0", "034#0000BEEFDEAD0000"};
   cansend(can_msg);
-  delay(100);
-
-  // read the sent-back msg and print results
-  //struct SlowControlsData sc;
-  //canread(&sc);
-  printf("  The high voltage is >>> ");
-  printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
+  //delay(100);
+  usleep(USLP);
+  rcvStat = canread(rcv_msg);
+  if (rcvStat == 1)
+  {
+    decodeCANmsg(&sc, rcv_msg);
+    HV_EN = sc.hv_en;
+    printf("  The high voltage is >>> ");
+    printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
+    printf(" > high voltage: %.1f V\n", sc.hv);
+  }
+  else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+  delay(3*MSEC);
+  rcv_msg[0] = '\0';
 
   return HV_EN;
 }

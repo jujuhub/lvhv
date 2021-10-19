@@ -5,6 +5,12 @@
  *    header for LowVoltage.c
  */
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <wiringPi.h>
+
 #define NCHAR 10
 
 /*
