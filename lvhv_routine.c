@@ -168,7 +168,7 @@ int main(void)
 
   decodeCANmsg(&sc, dummy_msg);
   printf(" ~~~ test ~~~\n");
-  //printf(" humidity: %0.1f %%\n temperature: %0.1f deg C\n", sc.hum, sc.temp);
+  //printf(" humidity: %.1f %%\n temperature: %.1f deg C\n", sc.hum, sc.temp);
   //printf(" low voltage is: ");
   //printf(sc.lv_en ? "enabled\n" : "disabled\n");
   printf(" low voltages are: %0.2f V, %0.2f V, %0.2f V\n", sc.lvA, sc.lvB, sc.lvC);
@@ -234,7 +234,7 @@ int main(void)
     if (rcvStat == 1)
     {
       decodeCANmsg(&sc, rcv_msg);
-      printf(" > photodiode: %.1f %%\n", sc.photodiode);
+      printf(" > photodiode: %.2f %%\n", sc.photodiode);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
@@ -250,7 +250,7 @@ int main(void)
     if (rcvStat == 1)
     {
       decodeCANmsg(&sc, rcv_msg);
-      printf(" > low voltages: %.1f V, %.1f V, %.f V.\n", sc.lvA, sc.lvB, sc.lvC);
+      printf(" > low voltages: %.2f V, %.2f V, %.2f V.\n", sc.lvA, sc.lvB, sc.lvC);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
@@ -266,7 +266,7 @@ int main(void)
     if (rcvStat == 1)
     {
       decodeCANmsg(&sc, rcv_msg);
-      printf(" > high voltage: %.1f V\n", sc.hv);
+      printf(" > high voltage: %.2f V\n", sc.hv);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
@@ -284,7 +284,7 @@ int main(void)
       if (rcvStat == 1)
       {
         decodeCANmsg(&sc, rcv_msg);
-        printf(" > trigger bd DAC0: %.1f V\n", sc.trig_dac0);
+        printf(" > trigger bd DAC0: %.3f V\n", sc.trig_dac0);
       }
       else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
       delay(3*MSEC);
@@ -297,7 +297,7 @@ int main(void)
       if (rcvStat == 1)
       {
         decodeCANmsg(&sc, rcv_msg);
-        printf(" > trigger bd DAC1: %.1f V\n", sc.trig_dac1);
+        printf(" > trigger bd DAC1: %.3f V\n", sc.trig_dac1);
       }
       else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
       delay(3*MSEC);

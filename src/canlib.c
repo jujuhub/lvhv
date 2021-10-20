@@ -313,6 +313,7 @@ int canread(char *rcv_msg)
     else
     {
       printf(" @@@ No data found. Trying again...\n");
+      //read_attempts++;
       continue;
     }
 
@@ -383,7 +384,7 @@ int decodeCANmsg(struct SlowControlsData *sc, char *rcv_msg)
   { // trigger bd
     decodeTrigBd(sc, rcv_msg);
   }
-  else { printf(" @@@ unrecognized msg ID !!!\n"); return -3; }
+  else { printf(" @@@ unrecognized msg ID: %s !!!\n", msgID); return -3; }
 
   return 1;
 }

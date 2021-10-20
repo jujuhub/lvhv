@@ -194,7 +194,7 @@ bool checkHV(void)
     HV_EN = sc.hv_en;
     printf("  The high voltage is >>> ");
     printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
-    printf(" > high voltage: %.1f V\n", sc.hv);
+    printf(" > high voltage: %.4f V\n", sc.hv);
   }
   else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
   delay(3*MSEC);

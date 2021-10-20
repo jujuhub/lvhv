@@ -143,7 +143,7 @@ void checkLV(void)
   if (rcvStat == 1)
   {
     decodeCANmsg(&sc, rcv_msg);
-    printf(" > low voltages: %.1f V, %.1f V, %.f V.\n", sc.lvA, sc.lvB, sc.lvC);
+    printf(" > low voltages: %.2f V, %.2f V, %.2f V.\n", sc.lvA, sc.lvB, sc.lvC);
   }
   else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
   delay(3*MSEC);

@@ -291,7 +291,7 @@ void decodePhotodiode(struct SlowControlsData *sc, char *canmsg)
   pd_data[4] = '\0';
 
   int hex_pd = (int)strtol(pd_data, NULL, 16);
-  sc->photodiode = (double)hex_pd * ADC_CONVERSION;
+  sc->photodiode = (double)hex_pd * ADC_CONVERSION * 100.;
 
   return;
 }
