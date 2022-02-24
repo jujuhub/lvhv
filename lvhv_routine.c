@@ -160,18 +160,18 @@ int main(void)
 
 
   /*** test struct ***/
-  //char dummy_msg[21] = "321#0153286D3A000000";
-  //char dummy_msg[21] = "220#0001000100010001";
-  char dummy_msg[21] = "3DA#02EF00026C000162";
-  dummy_msg[20] = '\0';
+  //char dummy_msg[21] = "321#0153286D3A000000";  //rh&t
+  //char dummy_msg[21] = "220#0001000100010001";  //lv en
+  //char dummy_msg[21] = "3DA#02EF00026C000162";  //lv adc
+  //dummy_msg[20] = '\0';
   struct SlowControlsData sc;
 
-  decodeCANmsg(&sc, dummy_msg);
-  printf(" ~~~ test ~~~\n");
+  //decodeCANmsg(&sc, dummy_msg);
+  //printf(" ~~~ test ~~~\n");
   //printf(" humidity: %.1f %%\n temperature: %.1f deg C\n", sc.hum, sc.temp);
   //printf(" low voltage is: ");
   //printf(sc.lv_en ? "enabled\n" : "disabled\n");
-  printf(" low voltages are: %0.2f V, %0.2f V, %0.2f V\n", sc.lvA, sc.lvB, sc.lvC);
+  //printf(" low voltages are: %0.2f V, %0.2f V, %0.2f V\n", sc.lvA, sc.lvB, sc.lvC);
 
   int rcvStat = -8;  //can msg receive status
   char rcv_msg[21];
@@ -203,7 +203,7 @@ int main(void)
     char *can_msg_rht[] = {"dummy", "can0", "123#0000000000000000"};
     cansend(can_msg_rht);
 //    delay(1*MSEC); // need this delay to read data
-    usleep(USLP);
+    usleep(5*USLP);
     rcvStat = canread(rcv_msg);
     //printf("rcv_msg: %s \nlength of rcv_msg: %u\n", rcv_msg, strlen(rcv_msg)); //DEBUG
     if (rcvStat == 1)
@@ -250,7 +250,7 @@ int main(void)
     if (rcvStat == 1)
     {
       decodeCANmsg(&sc, rcv_msg);
-      printf(" > low voltages: %.2f V, %.2f V, %.2f V.\n", sc.lvA, sc.lvB, sc.lvC);
+      printf(" > low voltages: %.3f V, %.3f V, %.3f V.\n", sc.lvA, sc.lvB, sc.lvC);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
@@ -259,14 +259,14 @@ int main(void)
 
     /*** check high voltage ***/
     printf("Fetching high voltage status...\n");
-    char *can_msg_hv[] = {"dummy", "can0", "034#0000BEEFDEAD0000"};
+    char *can_msg_hv[] = {"dummy", "can0", "034#0000000000000000"};
     cansend(can_msg_hv);
     usleep(USLP);
     rcvStat = canread(rcv_msg);
     if (rcvStat == 1)
     {
       decodeCANmsg(&sc, rcv_msg);
-      printf(" > high voltage: %.2f V\n", sc.hv);
+      printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
@@ -303,6 +303,12 @@ int main(void)
       delay(3*MSEC);
       rcv_msg[0] = '\0';
     }
+
+    delay(7*MSEC);
+    delay(10*MSEC);
+    delay(10*MSEC);
+    delay(10*MSEC);
+    delay(10*MSEC);
 
   } // end main loop
 

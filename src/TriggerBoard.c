@@ -156,13 +156,30 @@ void checkTrigger(int dac_i)
   }
 
   // send CAN msg to request trigger settings
+  int rcvStat = -8;
+  char rcv_msg[21];
+  struct SlowControlsData sc;
+
   char *can_msg[] = {"dummy", "can0", msg};
   cansend(can_msg);
-  delay(100);
+  usleep(USLP+50);
+  rcvStat = canread(rcv_msg);
+  if (rcvStat == 1)
+  {
+    decodeCANmsg(&sc, rcv_msg);
+    if (dac_i == 0)
+    {
+      printf(" > trigger bd DAC%d: %.3f V\n", dac_i, sc.trig_dac0);
+    }
+    if (dac_i == 1)
+    {
+      printf(" > trigger bd DAC%d: %.3f V\n", dac_i, sc.trig_dac1);
+    }
+  }
+  else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+  delay(3*MSEC);
+  rcv_msg[0] = '\0';
 
-  // read the sent-back msg and print results
-  printf("  The trigger on DAC %d is ...\n\n", dac_i);
-  // ...
 }
 
 int setTrigger(int dac_i, float setTrig)

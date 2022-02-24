@@ -313,7 +313,7 @@ int canread(char *rcv_msg)
     else
     {
       printf(" @@@ No data found. Trying again...\n");
-      //read_attempts++;
+      read_attempts++;
       continue;
     }
 

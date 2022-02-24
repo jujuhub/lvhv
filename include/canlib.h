@@ -38,7 +38,7 @@
 #define DATA_SEPARATOR '.'
 #define CAN_DLC 8
 
-#define MAX_READ_ATTEMPTS 50
+#define MAX_READ_ATTEMPTS 100
 #define CANLOG "canlog.txt"
 
 

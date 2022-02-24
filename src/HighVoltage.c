@@ -183,7 +183,7 @@ bool checkHV(void)
   struct SlowControlsData sc;
 
   printf("\nChecking status of high voltage lines...\n");
-  char *can_msg[] = {"dummy", "can0", "034#0000BEEFDEAD0000"};
+  char *can_msg[] = {"dummy", "can0", "034#0000000000000000"};
   cansend(can_msg);
   //delay(100);
   usleep(USLP);
@@ -194,7 +194,7 @@ bool checkHV(void)
     HV_EN = sc.hv_en;
     printf("  The high voltage is >>> ");
     printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
-    printf(" > high voltage: %.4f V\n", sc.hv);
+    printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
   }
   else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
   delay(3*MSEC);
@@ -229,9 +229,9 @@ int setHV(float vset)
   }
 
   float vpct = vset / C40N_MAX;
-  printf("    fraction of max HV output (4kV) = %f\n", vpct);
+  printf("    fraction of max HV output (4kV) = %.5f\n", vpct);
   float dac_vout = vpct * DAC_VMAX;
-  printf("    DAC output voltage = %f\n\n", dac_vout);
+  printf("    DAC output voltage = %.5f\n\n", dac_vout);
 
   // convert into DAC input code
   int k = 0;
