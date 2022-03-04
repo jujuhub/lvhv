@@ -127,25 +127,9 @@ int main(void)
     }
   }
 
-// if (RHT == 'OK')
-//   proceed with routine
-// if (RHT != 'OK')
-//  printf("WARNING!! RH&T levels are above threshold! Do you want to continue? (Y/N)> ");
-  // wait for user input
-  // keep reading RH&T until levels are OK?
-
-// after status checks come out OK
-//  printf("Do you wish to turn on the HV? (Y/N)> ");
-// wait for user input
-// if YES
-//    start HV turn on sequence.. call on a script?
-//    set HV_ON_OFF logic to be HIGH, but first set DAC output to be 0V
-// if NO
-//    wait until user says yes
-//    or move on to checking RH&T
 
   // read from canlogs instead of receiving can msgs directly
-  // initialize list of canlogs
+  //initialize list of canlogs
   bool use_canlogs = USE_CANLOGS;
   glob_t globlist;
   glob(FILEPATH, GLOB_TILDE, NULL, &globlist);
@@ -175,7 +159,8 @@ int main(void)
 
   int rcvStat = -8;  //can msg receive status
   char rcv_msg[21];
-  //bool dataFetched = false;
+  int temp_flag = 0, hum_flag = 0;
+
   while (1)
   {
     if (use_canlogs)
@@ -210,19 +195,37 @@ int main(void)
     {
       decodeCANmsg(&sc, rcv_msg);
       printf(" > humidity: %.1f %%\n > temperature: %.1f deg C\n", sc.hum, sc.temp);
+
+      if (sc.temp > 45. || sc.hum > 40.)
+      {
+        printf(" @@@ WARNING !! TEMPERATURE and/or HUMIDITY ABOVE SAFE LEVELS !!! @@@\n");
+        printf("  >> ramping down high voltage...\n");
+
+        double vset = 0., vtmp = sc.hv;
+        printf(" [debug] vtmp (sc.hv) = %.3f V (x1000)\n", vtmp);
+        double vdiff = fabs(vset - vtmp);
+        double sign = -1.0;   //hardcoded
+        printf("  [initial] vtmp = %0.2f V,  vdiff = %.2f V\n", vtmp, vdiff);
+        while (vtmp != vset)
+        {
+          if (vdiff < DV) // check if close to final voltage
+          {
+            vtmp += sign*vdiff;
+          }
+          else // increment by DV volts
+          {
+            vtmp += sign*DV;
+          }
+          vdiff = fabs(vset - vtmp);
+          printf("  [updated] vtmp = %.2f V, vdiff = %.2f V\n", vtmp, vdiff);
+          setHV(vtmp);
+        }
+        checkHV();
+      }
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
     delay(3*MSEC);
     rcv_msg[0] = '\0';
-
-    // receive CAN msg with RH&T data
-    // convert to human-readable format
-    // save in .txt file: data status ('Normal' or 'Stale')
-    //                    RH in decimal
-    //                    T in decimal
-    //                    data type (from RPi script or user command?)
-    // keep running average of RH&T (separate script?)
-    // probe for user input?
 
 
     /*** fetch photodiode data ***/

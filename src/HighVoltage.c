@@ -113,6 +113,14 @@ int main(void)
 
       case 2:
         // need to make sure HV is enabled
+        /***
+        if (!sc.hv_en)
+        {
+          printf(" @@@ WARNING !! HV is NOT ENABLED!! Please try again.\n");
+          break;
+        }
+        ***/
+
         printf("PREVIOUSLY SET HV = %.2f V\n\n", vprev);
         printf("What is the max (PC) high voltage you want to set? [0., %.2f] > ", HV_MAX);
         fgets(user_input, NCHAR, stdin);
