@@ -177,6 +177,10 @@ int main(void)
 
 bool checkHV(void)
 {
+  FILE *fp = fopen(PREV_HV_FILE, "a+");
+  time_t tstamp;
+  tstamp = time(NULL);
+
   bool HV_EN = false;
   int rcvStat = -8;
   char rcv_msg[21];
@@ -195,10 +199,16 @@ bool checkHV(void)
     printf("  The high voltage is >>> ");
     printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
     printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
+
+    //write to file
+    tstamp = time(NULL);
+    fprintf(fp, "%.2f V %s", sc.hv*1000., asctime(localtime(&tstamp)));
   }
   else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
   delay(3*MSEC);
   rcv_msg[0] = '\0';
+
+  fclose(fp);
 
   return HV_EN;
 }
