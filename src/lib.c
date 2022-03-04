@@ -316,6 +316,111 @@ void decodeTrigBd(struct SlowControlsData *sc, char *canmsg)
   return;
 }
 
+bool checkHV(void)
+{
+  FILE *fp = fopen(PREV_HV_FILE, "a+");
+  time_t tstamp;
+  tstamp = time(NULL);
+
+  bool HV_EN = false;
+  int rcvStat = -8;
+  char rcv_msg[21];
+  struct SlowControlsData sc;
+
+  printf("\nChecking status of high voltage lines...\n");
+  char *can_msg[] = {"dummy", "can0", "034#0000000000000000"};
+  cansend(can_msg);
+  //delay(100);
+  usleep(USLP);
+  rcvStat = canread(rcv_msg);
+  if (rcvStat == 1)
+  {
+    decodeCANmsg(&sc, rcv_msg);
+    HV_EN = sc.hv_en;
+    printf("  The high voltage is >>> ");
+    printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
+    printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
+
+    //write to file
+    tstamp = time(NULL);
+    fprintf(fp, "%.2f V %s", sc.hv*1000., asctime(localtime(&tstamp)));
+  }
+  else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
+  delay(3*MSEC);
+  rcv_msg[0] = '\0';
+
+  fclose(fp);
+
+  return HV_EN;
+}
+
+
+int setHV(float vset)
+{
+  if (vset > HV_MAX)
+  {
+    vset = HV_MAX;
+  }
+
+  float vpct = vset / C40N_MAX;
+  printf("    fraction of max HV output (4kV) = %.5f\n", vpct);
+  float dac_vout = vpct * DAC_VMAX;
+  printf("    DAC output voltage = %.5f\n\n", dac_vout);
+
+  // convert into DAC input code
+  int k = 0;
+  k = (int)(pow(2,12) * dac_vout / DAC_VREF);
+  //printf("DEBUG:  k = %d,  k = %X (hex),  k << 3 = %X (hex)\n", k, k, (k<<3));
+
+  // prepare CAN msg
+  char msg[] = "050#0000000000000000";
+  char tmp[17];
+  sprintf(tmp, "%X\n", (k<<3));
+  //printf("DEBUG:  msg = %s, len = %d\n", msg, strlen(msg));
+  //printf("DEBUG:  tmp = %s, len = %d\n", tmp, strlen(tmp));
+  if (strlen(tmp) > 5)
+  {
+    printf("  !!! Unable to set voltage. Please try again.\n");
+    return 1;
+  }
+
+  int c = 0;
+  int delta = 5-strlen(tmp);
+  while (c < strlen(tmp)-1)
+  {
+    msg[4+c+delta] = tmp[c];
+//    printf("DEBUG:  msg = %s, len = %d\n", msg, strlen(msg));
+    c++;
+  }
+
+  // create a can_msg and then send
+  char *can_msg[] = {"dummy", "can0", msg};
+  printf("DEBUG:  can_msg[2] = %s\n\n", can_msg[2]);
+  cansend(can_msg);
+  delay(3*MSEC);
+
+  return 0;
+}
+
+
+void enableHV(int pwrEn)
+{
+  if (pwrEn) // ENABLE high voltage
+  {
+    char *can_msg[] = {"dummy", "can0", "040#BEEFDEAD00000000"};
+    cansend(can_msg);
+  }
+  if (!pwrEn) // DISABLE high voltage
+  {
+    char *can_msg[] = {"dummy", "can0", "030#00000000BEEFDEAD"};
+    cansend(can_msg);
+  }
+  printf("  The high voltage is >>> ");
+  printf(pwrEn ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
+
+  delay(100);
+}
+
 
 /**************************************************
  *                NOT USED ANYMORE                *

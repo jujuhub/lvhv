@@ -183,6 +183,7 @@ int main(void)
   return 0;
 }
 
+/*
 bool checkHV(void)
 {
   FILE *fp = fopen(PREV_HV_FILE, "a+");
@@ -221,6 +222,7 @@ bool checkHV(void)
   return HV_EN;
 }
 
+
 void enableHV(int pwrEn)
 {
   if (pwrEn) // ENABLE high voltage
@@ -238,6 +240,7 @@ void enableHV(int pwrEn)
 
   delay(100);
 }
+
 
 int setHV(float vset)
 {
@@ -285,3 +288,4 @@ int setHV(float vset)
 
   return 0;
 }
+*/

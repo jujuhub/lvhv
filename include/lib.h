@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <wiringPi.h>
 
+#include "HighVoltage.h"
+
 #define RLY1 25
 #define RLY2 28
 #define RLY3 29
@@ -79,6 +81,10 @@ void decodeLV(struct SlowControlsData *sc, char *canmsg);
 void decodeHV(struct SlowControlsData *sc, char *canmsg);
 void decodePhotodiode(struct SlowControlsData *sc, char *canmsg);
 void decodeTrigBd(struct SlowControlsData *sc, char *canmsg);
+
+bool checkHV(void);
+int setHV(float vset);
+void enableHV(int pwrEn);
 
 /**************************************************
  *                NOT USED ANYMORE                *

@@ -29,7 +29,7 @@
  * parameters:  none
  * return:      none
  */
-bool checkHV(void);
+//bool checkHV(void);
 
 /*
  * function:    enableHV
@@ -38,7 +38,7 @@ bool checkHV(void);
  * parameters:  pwrEn = on(1) or off(0)
  * return:      none
  */
- void enableHV(int pwrEn);
+// void enableHV(int pwrEn);
 
 /*
  * function:    setHV
@@ -47,4 +47,4 @@ bool checkHV(void);
  * parameters:  hvSet = max high voltage to set
  * return:      0 (successful) or 1 (unsuccessful)
  */
-int setHV(float vset);
+//int setHV(float vset);

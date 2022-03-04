@@ -17,9 +17,13 @@
 
 #include "lib.h"
 #include "canlib.h"
+#include "include/HighVoltage.h"
 
 #define FILEPATH "/home/pi/can-/candump*.log"
 #define USE_CANLOGS 0 //bool
+#define RHTFILENAME "hum_temp_data.txt"
+#define MAXTEMP 51. //C
+#define MAXHUM 50.  //%
 
 int main(void)
 {
@@ -160,9 +164,13 @@ int main(void)
   int rcvStat = -8;  //can msg receive status
   char rcv_msg[21];
   int temp_flag = 0, hum_flag = 0;
+  time_t tstamp;
+  tstamp = time(NULL);
 
   while (1)
   {
+    FILE *fp = fopen(RHTFILENAME, "a+");
+
     if (use_canlogs)
     {
       glob(FILEPATH, GLOB_TILDE, NULL, &globlist); //GLOB_APPEND will not sort entire list
@@ -195,13 +203,17 @@ int main(void)
     {
       decodeCANmsg(&sc, rcv_msg);
       printf(" > humidity: %.1f %%\n > temperature: %.1f deg C\n", sc.hum, sc.temp);
+      //save to file
+      printf("saving to file...\n");
+      tstamp = time(NULL);
+      fprintf(fp, "%.2f,%.2f,%s", sc.hum, sc.temp, asctime(localtime(&tstamp)));
 
-      if (sc.temp > 45. || sc.hum > 40.)
+      if (sc.temp > MAXTEMP || sc.hum > MAXHUM)
       {
         printf(" @@@ WARNING !! TEMPERATURE and/or HUMIDITY ABOVE SAFE LEVELS !!! @@@\n");
         printf("  >> ramping down high voltage...\n");
 
-        double vset = 0., vtmp = sc.hv;
+        double vset = 0., vtmp = sc.hv*1000.;
         printf(" [debug] vtmp (sc.hv) = %.3f V (x1000)\n", vtmp);
         double vdiff = fabs(vset - vtmp);
         double sign = -1.0;   //hardcoded
@@ -220,6 +232,7 @@ int main(void)
           printf("  [updated] vtmp = %.2f V, vdiff = %.2f V\n", vtmp, vdiff);
           setHV(vtmp);
         }
+        enableHV(0);
         checkHV();
       }
     }
@@ -307,6 +320,7 @@ int main(void)
       rcv_msg[0] = '\0';
     }
 
+    fclose(fp);
     delay(7*MSEC);
     delay(10*MSEC);
     delay(10*MSEC);
