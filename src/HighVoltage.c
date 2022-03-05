@@ -58,8 +58,10 @@ int main(void)
   printf("\n >> last HV setting: \n");
   vprev = readPrevHV(PREV_HV_FILE);
 
+  struct SlowControlsData sc;
+
   /* check the high voltage status */
-  if (!checkHV())
+  if (!checkHV(&sc))
   {
     //printf(" test!\n"); //DEBUG
     vprev = 0.;
@@ -108,20 +110,20 @@ int main(void)
           break;
         }
         enableHV(pwrEn);
-        checkHV();
+        checkHV(&sc);
         break;
 
       case 2:
         // need to make sure HV is enabled
-        /***
-        if (!sc.hv_en)
-        {
-          printf(" @@@ WARNING !! HV is NOT ENABLED!! Please try again.\n");
-          break;
-        }
-        ***/
 
-        printf("PREVIOUSLY SET HV = %.2f V\n\n", vprev);
+        vread = readPrevHV(PREV_HV_FILE);
+        if (!checkHV(&sc))
+        {
+          printf("\n @@@ WARNING !! HV is DISABLED!\n\n"); 
+          vread = vprev;
+        }
+        printf(" > PREVIOUSLY SET HV: %.2f V\n\n", vread);
+        //printf(" > PREVIOUSLY SET HV = %.2f V\n\n", vprev);
         printf("What is the max (PC) high voltage you want to set? [0., %.2f] > ", HV_MAX);
         fgets(user_input, NCHAR, stdin);
         vset = (float)atof(user_input);
@@ -131,23 +133,17 @@ int main(void)
           break;
         }
         printf("\nYou input >> %.2f V <<\n", vset);
-        if (vset > vprev)
-        {
-          sign = 1.0;
-        }
+        if (vset > vprev) { sign = 1.0; }
         vtmp = vprev;
         vdiff = fabs(vset - vtmp);
-        printf("  [initial] vtmp = %0.2f V,  vdiff = %.2f V\n", vtmp, vdiff);
+        printf("  [initial] vtmp = %0.2f V,  vdiff = %.2f V\n\n", vtmp, vdiff);
         while (vtmp != vset)
         {
-          if (vdiff < DV) // check if close to final voltage
-          {
-            vtmp += sign*vdiff;
-          }
-          else // increment by DV volts
-          {
-            vtmp += sign*DV;
-          }
+          //check if close to final voltage
+          if (vdiff < DV) { vtmp += sign*vdiff; }
+          //increment by DV volts
+          else { vtmp += sign*DV; }
+
           vdiff = fabs(vset - vtmp);
           printf("  [updated] vtmp = %.2f V, vdiff = %.2f V\n", vtmp, vdiff);
           setHV(vtmp);
@@ -159,12 +155,12 @@ int main(void)
         break;
 
       case 3:
-        checkHV();
+        checkHV(&sc);
         break;
 
       case 4:
         vread = readPrevHV(PREV_HV_FILE);
-        printf("PREVIOUSLY SET HV: %0.2f V\n", vread);
+        printf(" > PREVIOUSLY SET HV: %0.2f V\n", vread);
         break;
 
       case 5:
@@ -184,7 +180,7 @@ int main(void)
 }
 
 /*
-bool checkHV(void)
+bool checkHV(struct SlowControlsData sc)
 {
   FILE *fp = fopen(PREV_HV_FILE, "a+");
   time_t tstamp;

@@ -22,7 +22,7 @@
 #define FILEPATH "/home/pi/can-/candump*.log"
 #define USE_CANLOGS 0 //bool
 #define RHTFILENAME "hum_temp_data.txt"
-#define MAXTEMP 51. //C
+#define MAXTEMP 40. //C
 #define MAXHUM 50.  //%
 
 int main(void)
@@ -163,7 +163,7 @@ int main(void)
 
   int rcvStat = -8;  //can msg receive status
   char rcv_msg[21];
-  int temp_flag = 0, hum_flag = 0;
+  //int temp_flag = 0, hum_flag = 0;
   time_t tstamp;
   tstamp = time(NULL);
 
@@ -204,36 +204,41 @@ int main(void)
       decodeCANmsg(&sc, rcv_msg);
       printf(" > humidity: %.1f %%\n > temperature: %.1f deg C\n", sc.hum, sc.temp);
       //save to file
-      printf("saving to file...\n");
+      printf(" ...saving to file...\n");
       tstamp = time(NULL);
       fprintf(fp, "%.2f,%.2f,%s", sc.hum, sc.temp, asctime(localtime(&tstamp)));
 
       if (sc.temp > MAXTEMP || sc.hum > MAXHUM)
       {
-        printf(" @@@ WARNING !! TEMPERATURE and/or HUMIDITY ABOVE SAFE LEVELS !!! @@@\n");
-        printf("  >> ramping down high voltage...\n");
+        printf("\n @@@ WARNING !! TEMPERATURE and/or HUMIDITY ABOVE SAFE LEVELS !!! @@@\n");
+        bool HV_EN = checkHV(&sc);
+        //printf(" [debug] sc.hv = %.3f\n", sc.hv);
+        //printf(" [debug] sc.hv_en = %d\n", sc.hv_en);
 
-        double vset = 0., vtmp = sc.hv*1000.;
-        printf(" [debug] vtmp (sc.hv) = %.3f V (x1000)\n", vtmp);
-        double vdiff = fabs(vset - vtmp);
-        double sign = -1.0;   //hardcoded
-        printf("  [initial] vtmp = %0.2f V,  vdiff = %.2f V\n", vtmp, vdiff);
-        while (vtmp != vset)
+        //automated HV ramp-down
+        if (HV_EN)
         {
-          if (vdiff < DV) // check if close to final voltage
+          printf("  >> Ramping down high voltage...\n");
+
+          double vset = 0., vtmp = sc.hv*1000.;
+          printf(" [debug] vtmp (sc.hv) = %.3f V (x1000)\n", vtmp);
+          double vdiff = fabs(vset - vtmp);
+          double sign = -1.0;   //hardcoded
+          printf("  [initial] vtmp = %0.2f V,  vdiff = %.2f V\n", vtmp, vdiff);
+          while (vtmp != vset)
           {
-            vtmp += sign*vdiff;
+            //check if close to final voltage
+            if (vdiff < DV) { vtmp += sign*vdiff; }
+            //increment by DV volts
+            else { vtmp += sign*DV; }
+
+            vdiff = fabs(vset - vtmp);  //calculate new vdiff
+            printf("  [updated] vtmp = %.2f V, vdiff = %.2f V\n", vtmp, vdiff);
+            setHV(vtmp);
           }
-          else // increment by DV volts
-          {
-            vtmp += sign*DV;
-          }
-          vdiff = fabs(vset - vtmp);
-          printf("  [updated] vtmp = %.2f V, vdiff = %.2f V\n", vtmp, vdiff);
-          setHV(vtmp);
+          enableHV(0);  //disable HV module
+          checkHV(&sc);
         }
-        enableHV(0);
-        checkHV();
       }
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }

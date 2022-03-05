@@ -316,7 +316,8 @@ void decodeTrigBd(struct SlowControlsData *sc, char *canmsg)
   return;
 }
 
-bool checkHV(void)
+
+bool checkHV(struct SlowControlsData *sc)
 {
   FILE *fp = fopen(PREV_HV_FILE, "a+");
   time_t tstamp;
@@ -325,7 +326,6 @@ bool checkHV(void)
   bool HV_EN = false;
   int rcvStat = -8;
   char rcv_msg[21];
-  struct SlowControlsData sc;
 
   printf("\nChecking status of high voltage lines...\n");
   char *can_msg[] = {"dummy", "can0", "034#0000000000000000"};
@@ -335,15 +335,15 @@ bool checkHV(void)
   rcvStat = canread(rcv_msg);
   if (rcvStat == 1)
   {
-    decodeCANmsg(&sc, rcv_msg);
-    HV_EN = sc.hv_en;
+    decodeCANmsg(sc, rcv_msg);
+    HV_EN = sc->hv_en;
     printf("  The high voltage is >>> ");
     printf(HV_EN ? "ENABLED (ON) <<<\n" : "DISABLED (OFF) <<<\n");
-    printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
+    printf(" > high voltage: %.3f V (x1000)\n", sc->hv);
 
     //write to file
     tstamp = time(NULL);
-    fprintf(fp, "%.2f V %s", sc.hv*1000., asctime(localtime(&tstamp)));
+    fprintf(fp, "%.2f V %s", sc->hv*1000., asctime(localtime(&tstamp)));
   }
   else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
   delay(3*MSEC);
@@ -353,7 +353,6 @@ bool checkHV(void)
 
   return HV_EN;
 }
-
 
 int setHV(float vset)
 {
@@ -365,7 +364,7 @@ int setHV(float vset)
   float vpct = vset / C40N_MAX;
   printf("    fraction of max HV output (4kV) = %.5f\n", vpct);
   float dac_vout = vpct * DAC_VMAX;
-  printf("    DAC output voltage = %.5f\n\n", dac_vout);
+  printf("    DAC output voltage = %.5f\n", dac_vout);
 
   // convert into DAC input code
   int k = 0;
@@ -395,13 +394,12 @@ int setHV(float vset)
 
   // create a can_msg and then send
   char *can_msg[] = {"dummy", "can0", msg};
-  printf("DEBUG:  can_msg[2] = %s\n\n", can_msg[2]);
+  printf("  [DEBUG]  can_msg[2] = %s\n\n", can_msg[2]);
   cansend(can_msg);
   delay(3*MSEC);
 
   return 0;
 }
-
 
 void enableHV(int pwrEn)
 {

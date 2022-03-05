@@ -145,14 +145,14 @@ void checkTrigger(int dac_i)
     // set msg ID = 0x0BC
     msg[1] = 'B';
     msg[2] = 'C';
-    printf("DEBUG:  msg = %s (DAC%d)\n", msg, dac_i);
+    //printf(" [DEBUG]  msg = %s (DAC%d)\n", msg, dac_i);
   }
   if (dac_i == DAC1)
   {
     // set msg ID = 0x0EF
     msg[1] = 'E';
     msg[2] = 'F';
-    printf("DEBUG: msg = %s (DAC%d)\n", msg, dac_i);
+    //printf(" [DEBUG] msg = %s (DAC%d)\n", msg, dac_i);
   }
 
   // send CAN msg to request trigger settings
@@ -193,22 +193,22 @@ int setTrigger(int dac_i, float setTrig)
     // set msg ID = 0x0AB
     msg[1] = 'A';
     msg[2] = 'B';
-    printf("DEBUG:  msg = %s (DAC%d)\n", msg, dac_i);
+    //printf(" [DEBUG]  msg = %s (DAC%d)\n", msg, dac_i);
   }
   if (dac_i == DAC1)
   {
     // set msg ID = 0x0DE
     msg[1] = 'D';
     msg[2] = 'E';
-    printf("DEBUG: msg = %s (DAC%d)\n", msg, dac_i);
+    //printf(" [DEBUG] msg = %s (DAC%d)\n", msg, dac_i);
   }
 
   // convert voltage to hex code
   int k = 0;
   k = (int)(setTrig * 4095 / VREF);
-  printf("DEBUG:  k = %d, %X (hex)\n", k, k);
+  //printf(" [DEBUG]  k = %d, %X (hex)\n", k, k);
   sprintf(tmp, "%X", k);
-  printf("DEBUG:  tmp = %s, len = %d\n", tmp, strlen(tmp));
+  printf(" [DEBUG]  tmp = %s, len = %d\n", tmp, strlen(tmp));
   if (strlen(tmp) > 3)
   {
     printf("  !!! Unable to set voltage. Please try again.\n");
@@ -220,9 +220,10 @@ int setTrigger(int dac_i, float setTrig)
   while (c < strlen(tmp))
   {
     msg[4+c+delta] = tmp[c];
-    printf("DEBUG:  msg = %s\n", msg);
+    //printf(" [DEBUG]  msg = %s\n", msg);
     c++;
   }
+  printf(" [DEBUG]  msg = %s\n", msg);
 
   // prepare and send CAN msg
   char *can_msg[] = { "dummy", "can0", msg};

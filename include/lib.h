@@ -82,7 +82,7 @@ void decodeHV(struct SlowControlsData *sc, char *canmsg);
 void decodePhotodiode(struct SlowControlsData *sc, char *canmsg);
 void decodeTrigBd(struct SlowControlsData *sc, char *canmsg);
 
-bool checkHV(void);
+bool checkHV(struct SlowControlsData *sc);
 int setHV(float vset);
 void enableHV(int pwrEn);
 
