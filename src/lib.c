@@ -420,6 +420,21 @@ void enableHV(int pwrEn)
 }
 
 
+float movingAvg(float *ptrArrNumbers, float *ptrSum, int pos, int len, float nextNum)
+{
+  /*
+   * from: https://gist.github.com/bmccormack/d12f4bf0c96423d03f82
+   */
+
+  //subtract oldest num from prev sum, add new num
+  *ptrSum = *ptrSum - ptrArrNumbers[pos] + nextNum;
+  //assign nextNum to pos in the array
+  ptrArrNumbers[pos] = nextNum;
+  //return avg
+  return *ptrSum / len;
+}
+
+
 /**************************************************
  *                NOT USED ANYMORE                *
  **************************************************/

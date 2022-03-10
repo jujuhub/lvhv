@@ -161,11 +161,20 @@ int main(void)
   //printf(sc.lv_en ? "enabled\n" : "disabled\n");
   //printf(" low voltages are: %0.2f V, %0.2f V, %0.2f V\n", sc.lvA, sc.lvB, sc.lvC);
 
+  //CAN msg variables
   int rcvStat = -8;  //can msg receive status
   char rcv_msg[21];
-  //int temp_flag = 0, hum_flag = 0;
+
   time_t tstamp;
   tstamp = time(NULL);
+
+  //HUM & TEMP variables
+  //int temp_flag = 0, hum_flag = 0;
+  float arrNumbers[SAMPSIZE] = {0};
+  int pos = 0;
+  float newAvgTemp = 0., tempSum = 0.;
+  int len = sizeof(arrNumbers) / sizeof(int);
+  printf(" [debug] num of values to take avg of: %d\n", len);
 
   while (1)
   {
@@ -207,8 +216,13 @@ int main(void)
       printf(" ...saving to file...\n");
       tstamp = time(NULL);
       fprintf(fp, "%.2f,%.2f,%s", sc.hum, sc.temp, asctime(localtime(&tstamp)));
+      //calculate moving avg
+      newAvgTemp = movingAvg(arrNumbers, &tempSum, pos, len, sc.temp);
+      printf(" [debug] new avg temp: %.1f\n", newAvgTemp);
+      pos++;
+      if (pos >= len) pos = 0;
 
-      if (sc.temp > MAXTEMP || sc.hum > MAXHUM)
+      if (newAvgTemp > MAXTEMP || sc.hum > MAXHUM)
       {
         printf("\n @@@ WARNING !! TEMPERATURE and/or HUMIDITY ABOVE SAFE LEVELS !!! @@@\n");
         bool HV_EN = checkHV(&sc);

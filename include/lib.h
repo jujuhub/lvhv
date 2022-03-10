@@ -30,6 +30,7 @@
 #define USLP 800  //us
 #define MSEC 1000 //milliseconds
 #define ADC_CONVERSION 0.00518 //0.00488  //5V or 5.33V / 1024 bits
+#define SAMPSIZE 5  //number of values to take moving avg of
 
 struct SlowControlsData {
   double hum, temp;
@@ -85,6 +86,8 @@ void decodeTrigBd(struct SlowControlsData *sc, char *canmsg);
 bool checkHV(struct SlowControlsData *sc);
 int setHV(float vset);
 void enableHV(int pwrEn);
+
+float movingAvg(float *ptrArrNumbers, float *ptrSum, int pos, int len, float nextNum);
 
 /**************************************************
  *                NOT USED ANYMORE                *
