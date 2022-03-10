@@ -10,6 +10,7 @@
 
 void discharge(void)
 {
+  //printf(" [debug] discharging...\n");
   pinMode(PIN_A, INPUT);
   pinMode(PIN_B, OUTPUT);
   digitalWrite(PIN_B, LOW);
@@ -19,18 +20,20 @@ void discharge(void)
 
 int charge_time(void)
 {
+  //printf(" [debug] charging...\n");
   pinMode(PIN_B, INPUT);
   pinMode(PIN_A, OUTPUT);
 
   int count = 0;
   digitalWrite(PIN_A, HIGH);
 
-  while (!digitalRead(PIN_B)) count++;
+  while (!digitalRead(PIN_B)) count++; 
   return count;
 }
 
 int analog_read(void)
 {
+  //printf(" [debug] reading...\n");
   discharge();
   return charge_time();
 }
@@ -42,7 +45,7 @@ int main(void)
 
   while (1)
   {
-    int measurment = analog_read();
+    int measurement = analog_read();
     printf("%d\n", measurement);
   }
 
