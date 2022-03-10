@@ -43,6 +43,7 @@ int main(void)
   while (1)
   {
     int measurment = analog_read();
+    printf("%d\n", measurement);
   }
 
   return 0;
