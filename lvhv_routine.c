@@ -22,8 +22,9 @@
 #define FILEPATH "/home/pi/can-/candump*.log"
 #define USE_CANLOGS 0 //bool
 #define RHTFILENAME "hum_temp_data.txt"
-#define MAXTEMP 40. //C
-#define MAXHUM 50.  //%
+#define SCFILENAME "sc_data.txt"
+#define MAXTEMP 60. //C
+#define MAXHUM 80.  //%
 
 int main(void)
 {
@@ -178,7 +179,7 @@ int main(void)
 
   while (1)
   {
-    FILE *fp = fopen(RHTFILENAME, "a+");
+    FILE *fp = fopen(SCFILENAME, "a+");
 
     if (use_canlogs)
     {
@@ -204,7 +205,6 @@ int main(void)
     //send CAN msg to request RH&T
     char *can_msg_rht[] = {"dummy", "can0", "123#0000000000000000"};
     cansend(can_msg_rht);
-//    delay(1*MSEC); // need this delay to read data
     usleep(5*USLP);
     rcvStat = canread(rcv_msg);
     //printf("rcv_msg: %s \nlength of rcv_msg: %u\n", rcv_msg, strlen(rcv_msg)); //DEBUG
@@ -215,7 +215,7 @@ int main(void)
       //save to file
       printf(" ...saving to file...\n");
       tstamp = time(NULL);
-      fprintf(fp, "%.2f,%.2f,%s", sc.hum, sc.temp, asctime(localtime(&tstamp)));
+      fprintf(fp, "RHT,%.2f,%.2f,%s", sc.hum, sc.temp, asctime(localtime(&tstamp)));
       //calculate moving avg
       newAvgTemp = movingAvg(arrNumbers, &tempSum, pos, len, sc.temp);
       printf(" [debug] new avg temp: %.1f\n", newAvgTemp);
@@ -256,7 +256,7 @@ int main(void)
       }
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
-    delay(3*MSEC);
+    delay(1*MSEC);
     rcv_msg[0] = '\0';
 
 
@@ -272,7 +272,7 @@ int main(void)
       printf(" > photodiode: %.2f %%\n", sc.photodiode);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
-    delay(3*MSEC);
+    delay(1*MSEC);
     rcv_msg[0] = '\0';
 
 
@@ -288,7 +288,7 @@ int main(void)
       printf(" > low voltages: %.3f V, %.3f V, %.3f V.\n", sc.lvA, sc.lvB, sc.lvC);
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
-    delay(3*MSEC);
+    delay(1*MSEC);
     rcv_msg[0] = '\0';
 
 
@@ -302,9 +302,13 @@ int main(void)
     {
       decodeCANmsg(&sc, rcv_msg);
       printf(" > high voltage: %.3f V (x1000)\n", sc.hv);
+
+      printf(" ...saving to file...\n");
+      tstamp = time(NULL);
+      fprintf(fp, "HV,%.3f,,%s", sc.hv*1000., asctime(localtime(&tstamp)));
     }
     else { printf(" @@@ CAN message receive error code: %d\n", rcvStat); }
-    delay(3*MSEC);
+    delay(1*MSEC);
     rcv_msg[0] = '\0';
 
 
@@ -340,11 +344,11 @@ int main(void)
     }
 
     fclose(fp);
-    delay(7*MSEC);
-    delay(10*MSEC);
-    delay(10*MSEC);
-    delay(10*MSEC);
-    delay(10*MSEC);
+    //delay(7*MSEC);
+    //delay(10*MSEC);
+    //delay(10*MSEC);
+    //delay(10*MSEC);
+    //delay(10*MSEC);
 
   } // end main loop
 
